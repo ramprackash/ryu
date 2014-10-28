@@ -11,7 +11,7 @@ ipAddress = Combine(Word(nums) + ('.' + Word(nums))*3)
 hexint = Word(hexnums,exact=2)
 specialchars = Word(alphanums+"."+"["+"]"+"$"+":"+"_"+"-"+">"+"\""+"("+")" \
                              +"\\"+";"+","+" "+"'"+"/"+"?"+"|"+"="+"*"+"!" \
-                             +"{"+"}"+"<")
+                             +"{"+"}"+"<"+"&"+"^"+"~"+"%"+"*"+"+"+"#")
 macAddress = Combine(hexint + (':'+hexint)*5)
 identifier = Word(alphas+"_", exact=1) + Optional(Word(alphanums+"_"))
 envvar     = Combine("$" + identifier)
@@ -27,16 +27,42 @@ proto      = (Word(alphas) | Word(nums))
 # options: A world between '(' & ')'
 options    = Combine("(" + Optional(specialchars))
 
+#Parser for a single option
+option_key = Word(alphas+"_"+"-")
+option_val = Word(alphanums+"."+"["+"]"+"$"+"_"+"-"+">"+"\""+"("+")" \
+        +"\\"+","+" "+"'"+"/"+"?"+"|"+"="+"*"+"!"+":"+"~"\
+                             +"{"+"}"+"<"+"&"+"^"+"%"+"*"+"+"+"#")
+kvp        = option_key + Optional(Literal(":")) + Optional(option_val) + Literal(";").suppress()
+rule_option = Literal("(").suppress() + OneOrMore(kvp) + Literal(")").suppress()
+
 class Rule:
     def __init__(self, action, proto, src_ip, dst_ip, src_port, dst_port,
-            options):
+            in_options):
         self.action = action
         self.proto  = proto
         self.src_ip = src_ip
         self.dst_ip = dst_ip
         self.src_port = src_port
         self.dst_port = dst_port
-        self.options  = options
+        self.options  = {}
+        option_tokens = rule_option.parseString(in_options)
+        i = 0
+        while i < range(len(option_tokens)):
+            #print "Processing %d of %d tokens (%s)" % (i, len(option_tokens),
+            #        option_tokens[i])
+            if option_tokens[i + 1] == ":":
+                self.options[option_tokens[i]] = option_tokens[i+2]
+                if (i+3) >= len(option_tokens):
+                    break
+                i = i+3
+            else:
+                i = i+1
+
+    def dumpOption(self, key=""):
+        if (key == ""):
+            print self.options
+        else:
+            print "%s = %s" % (key, self.options[key])
 
 class SnortParser:
     # Should be a singleton class - One instance is enough for the lifetime of
@@ -87,6 +113,13 @@ class SnortParser:
                     rule.options)
             index = index + 1
 
+    def dumpOptions(self):
+        index = 0;
+        while (index < len(self.rules)):
+            rule = self.rules[index]
+            rule.dumpOption(key="sid")
+            index = index + 1
+
     def getRules(self):
         """ 
         " API for IDS application to get the rules configured int the system
@@ -95,6 +128,7 @@ class SnortParser:
 
 
 # Testing
+#parser = SnortParser(rule_file="./light_probe.rules")
 parser = SnortParser()
-parser.dumpRules()
+parser.dumpOptions()
 
