@@ -99,10 +99,11 @@ class SnortParser:
                 except:
                     print "\nSyntax error at line %d in rule: %s" % (index, rule)
                     traceback.print_exc(file=sys.stdout)
+                    return "error"
                     break
 
         self.num_rules = index;
-        print "Total number of rules: %d : %d" % (self.num_rules, len(self.rules))
+        print "Total number of rules from %s: %d : %d" % (rule_file, self.num_rules, len(self.rules))
 
     def dumpRules(self):
         index = 0;
@@ -129,6 +130,6 @@ class SnortParser:
 
 # Testing
 #parser = SnortParser(rule_file="./light_probe.rules")
-parser = SnortParser()
-parser.dumpOptions()
+#parser = SnortParser()
+#parser.dumpOptions()
 

@@ -11,10 +11,14 @@ from ryu.controller.handler import set_ev_cls
 from ryu.ofproto import ofproto_v1_3
 from ryu.lib.packet import packet
 from ryu.lib.packet import ethernet
+from ryu.lib.packet import arp
+from ryu.lib.packet import ipv4
 from ryu.lib import hub
 
+import sys
 import ids_state_machine
 import traffic_monitor
+import simple_snort_rules
 
 import time
 
@@ -23,6 +27,11 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         super(IDSMain, self).__init__(*args, **kwargs)
         self.mac_to_port = {}
         self.datapaths = {}
+        self.lp_rules = simple_snort_rules.SnortParser(rule_file="./light_probe.rules")
+        self.dp_rules = simple_snort_rules.SnortParser(rule_file="./deep_probe.rules")
+        if (self.lp_rules == "error") or (self.dp_rules == "error"):
+            sys.exit(-1)
+            
         self.monitor_thread = hub.spawn(self._monitor)                
         
         self.state_machine = ids_state_machine.IDSStateMachine()
