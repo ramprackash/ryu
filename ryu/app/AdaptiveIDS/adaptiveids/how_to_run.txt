@@ -1,0 +1,15 @@
+1. Start mininet with 3 hosts
+sudo mn --topo single,3 --mac --controller remote --switch ovsk
+2. Enable OFv13
+sudo ovs-vsctl set bridge s1 protocols=OpenFlow13
+3. Start the monitoring script
+cd /home/ubuntu/ryu && ./bin/ryu-manager --verbose <correct path to monitoring script>.py
+
+4. xterm h1 h2 h3
+
+5. At h1
+run echo_server.py
+6. At h2
+run echo_client.py
+7. At h3
+run echo_client_fast.py
