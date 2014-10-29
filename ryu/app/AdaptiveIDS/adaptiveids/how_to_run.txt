@@ -3,7 +3,7 @@ sudo mn --topo single,3 --mac --controller remote --switch ovsk
 2. Enable OFv13
 sudo ovs-vsctl set bridge s1 protocols=OpenFlow13
 3. Start the monitoring script
-cd /home/ubuntu/ryu && ./bin/ryu-manager --verbose <correct path to monitoring script>.py
+cd /home/ubuntu/ryu && ./bin/ryu-manager --verbose <correct path to ids_main>.py
 
 4. xterm h1 h2 h3
 
