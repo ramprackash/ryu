@@ -16,17 +16,17 @@ class TrafficMonitor:
     def process_flow_stats(self, ev):
         body = ev.msg.body
         print('datapath          '
-                         'in-port eth-dst            '
+                         'in-port       ipv4-dst      '
                          'out-port packets bytes')
         print('---------------- '
                          '-------- ----------------- '
                          '-------- -------- --------')
-        for stat in sorted([flow for flow in body if flow.priority == 1],
+        for stat in sorted([flow for flow in body if flow.priority == 32768],
                            key=lambda flow: (flow.match['in_port'],
-                           flow.match['eth_dst'])):
+                           flow.match['ipv4_dst'])):
             print('%016x %8x %17s %8x %8d %8d' %(
                               ev.msg.datapath.id,
-                              stat.match['in_port'], stat.match['eth_dst'],
+                              stat.match['in_port'], stat.match['ipv4_dst'],
                               stat.instructions[0].actions[0].port,
                               stat.packet_count, stat.byte_count))
             flow_name = str(stat.match['in_port'])+str(stat.instructions[0].actions[0].port)
