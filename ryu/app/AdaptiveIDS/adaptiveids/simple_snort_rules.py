@@ -58,6 +58,35 @@ class Rule:
             else:
                 i = i+1
 
+    def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any", 
+            dst_port="any", pps=-1):
+        #print("Checking %s:%s:%d" % (self.src_ip, self.dst_ip, int(self.options["pps"])))
+        prot_match = sip_match = sport_match = dip_match = dport_match = pps_match = 0
+        result = None
+
+        if ((proto != "any") and (proto == self.proto)) or (proto == "any"):
+            prot_match = 1
+        if ((src_ip != "any") and (src_ip == self.src_ip)) or (src_ip == "any"):
+            sip_match = 1
+        if ((src_port != "any") and (src_port == self.src_port)) or (src_port == "any"):
+            sport_match = 1
+        if ((dst_ip != "any") and (dst_ip == self.dst_ip)) or (dst_ip == "any"):
+            dip_match = 1
+        if ((dst_port != "any") and (dst_port == self.dst_port)) or (dst_port == "any"):
+            dport_match = 1
+        if "pps" in self.options:
+            if ((pps != -1) and (pps >= int(self.options["pps"]))) or (pps == -1):
+                pps_match = 1
+        if prot_match == sip_match == sport_match == dip_match == dport_match == pps_match == 1:
+            if "msg" in self.options and self.action == "alert":
+                return [self.action, self.options["msg"]]
+            else:
+                return [self.action]
+        else:
+            return result
+
+
+
     def dumpOption(self, key=""):
         if (key == ""):
             print self.options
@@ -106,7 +135,7 @@ class SnortParser:
         print "Total number of rules from %s: %d : %d" % (rule_file, self.num_rules, len(self.rules))
 
     def dumpRules(self):
-        index = 0;
+        index = 0
         while (index < len(self.rules)):
             rule = self.rules[index]
             print "\n%d: %s %s %s -> %s %s %s" % (index, rule.action,
@@ -115,10 +144,10 @@ class SnortParser:
             index = index + 1
 
     def dumpOptions(self):
-        index = 0;
+        index = 0
         while (index < len(self.rules)):
             rule = self.rules[index]
-            rule.dumpOption(key="sid")
+            rule.dumpOption(key="msg")
             index = index + 1
 
     def getRules(self):
@@ -126,6 +155,19 @@ class SnortParser:
         " API for IDS application to get the rules configured int the system
         """
         # TODO
+
+    def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any", 
+            dst_port="any", pps=0):
+        index = 0
+        while (index < len(self.rules)):
+            rule = self.rules[index]
+            result = rule.getMatch(proto, src_ip, 
+                    src_port, dst_ip, dst_port, pps)
+            index = index + 1
+            if result == None:
+                next
+            else:
+                return result
 
 
 # Testing

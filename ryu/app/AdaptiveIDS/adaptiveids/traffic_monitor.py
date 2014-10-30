@@ -8,8 +8,9 @@ Created on Oct 16, 2014
 import random
 
 class TrafficMonitor:
-    def __init__(self, statemachine):
+    def __init__(self, statemachine, owner):
         self.statemachine = statemachine
+        self.owner        = owner # Back pointer to the IDSMain object
         self.latest_num_packets = {'12':0, '21':0, '13':0, '31':0, '23':0, '32':0}
         self.avg_outpackets = {}
     
@@ -35,11 +36,20 @@ class TrafficMonitor:
             self.latest_num_packets[flow_name] = stat.packet_count
             if flow_name in self.avg_outpackets:
                 if delta != 0:
-                    avg_delta = delta - self.avg_outpackets[flow_name]
-                    if avg_delta > 10:
-                        print('!!!Spike in traffic in flow ' + str(flow_name))
+                    avg_delta = delta / 10
+                    #print "Matching with snort rules delta = %d" % avg_delta
+                    result = self.owner.lp_rules.getMatch(
+                                src_ip=stat.match['ipv4_src'],
+                            dst_ip=stat.match['ipv4_dst'], pps=avg_delta)
+                    if (result != None):
                         self.statemachine.enforce_deep_probing()
                         self.statemachine.print_state()
+                        if "alert" in result: 
+                            print("ALERT : %s" % result[1])
+                        if "drop" in result:
+                            #TODO: Do a flowmod with action = drop for this flow
+                            print("!! DROP action will be implemented soon !!")
+
                     self.avg_outpackets[flow_name] = (self.avg_outpackets[flow_name] + int(delta))/2
             else:
                 self.avg_outpackets[flow_name] = int(stat.packet_count)

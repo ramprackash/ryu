@@ -45,11 +45,14 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.dp_rules = simple_snort_rules.SnortParser(rule_file="./deep_probe.rules")
         if (self.lp_rules == "error") or (self.dp_rules == "error"):
             sys.exit(-1)
+
+        self.lp_rules.dumpRules()
             
         self.monitor_thread = hub.spawn(self._monitor)                
         
         self.state_machine = ids_state_machine.IDSStateMachine()
-        self.traffic_mon = traffic_monitor.TrafficMonitor(self.state_machine)
+        self.traffic_mon = traffic_monitor.TrafficMonitor(self.state_machine,
+                self)
     
     def inspect_traffic(self):
         self.traffic_mon.process_flow_stats()
@@ -57,7 +60,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
     def start_processing(self):
         while(True):
             self.inspect_traffic()
-            time.sleep(30)
+            time.sleep(10)
     
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
@@ -78,7 +81,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             hub.sleep(10)
     
     def _request_stats(self, datapath):
-        self.logger.debug('send stats request: %016x', datapath.id)
+        #self.logger.debug('send stats request: %016x', datapath.id)
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
@@ -112,51 +115,11 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                                     match, inst)
         datapath.send_msg(req)
     
-    def set_flow(self, datapath, priority, in_port=0, dl_type=0, 
-                 dl_dst=0, dl_vlan=0,
-                 nw_src=0, src_mask=32, nw_dst=0, dst_mask=32,
-                 nw_proto=0, idle_timeout=0, actions=None):
-        ofp = datapath.ofproto
-        ofp_parser = datapath.ofproto_parser
-        cmd = ofp.OFPFC_ADD
-
-        # Match
-        # wildcards = ofp.OFPFW_ALL
-        # if dl_type:
-        #     wildcards &= ~ofp.OFPFW_DL_TYPE
-        # if dl_dst:
-        #     wildcards &= ~ofp.OFPFW_DL_DST
-        # if dl_vlan:
-        #     wildcards &= ~ofp.OFPFW_DL_VLAN
-        # if nw_src:
-        #     v = (32 - src_mask) << ofp.OFPFW_NW_SRC_SHIFT | \
-        #         ~ofp.OFPFW_NW_SRC_MASK
-        #     wildcards &= v
-        #     nw_src = ipv4_text_to_int(nw_src)
-        # if nw_dst:
-        #     v = (32 - dst_mask) << ofp.OFPFW_NW_DST_SHIFT | \
-        #         ~ofp.OFPFW_NW_DST_MASK
-        #     wildcards &= v
-        #     nw_dst = ipv4_text_to_int(nw_dst)
-        # if nw_proto:
-        #     wildcards &= ~ofp.OFPFW_NW_PROTO
-        # if in_port:
-        #     wildcards &= ~ofp.OFPFW_IN_PORT
-
-        match = ofp_parser.OFPMatch(in_port=in_port, eth_type=dl_type,
-                ipv4_src=nw_src, ipv4_dst=nw_dst)
-        actions = actions or []
-        inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS,
-                actions)]
-
-        m = ofp_parser.OFPFlowMod(datapath, match, cmd, priority, inst)
-        datapath.send_msg(m)
 
     # Learn a host's presence based on the received ARP packet and program flow
     # accordingly using L3 fields rather than like the simple_switch.py
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
-        print('In packet_in_handler')
         msg = ev.msg
         datapath = msg.datapath
         ofproto = datapath.ofproto
@@ -175,7 +138,6 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                 for p in pkt.protocols if type(p) != str)
 
         if ARP in header_list:
-            print "Handling ARP packet"
             src_ip = header_list[ARP].src_ip
             self.ip_to_port[dpid][src_ip] = in_port
             eth = pkt.get_protocols(ethernet.ethernet)[0]
@@ -188,7 +150,6 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                 out_port = ofproto.OFPP_FLOOD
 
             actions = [parser.OFPActionOutput(out_port)]
-            print("Found mac. Sending to %d" % out_port)
 
             data = None
             if msg.buffer_id == ofproto.OFP_NO_BUFFER:
@@ -216,26 +177,22 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                 match = parser.OFPMatch(in_port= in_port, ipv4_src=src_ip, 
                                         ipv4_dst=dst_ip)
                 match.set_dl_type(ether.ETH_TYPE_IP)
-                print "Adding IP flow with matching %s->%s" % (src_ip, dst_ip)
-                #self.set_flow(datapath, 3257, in_port=in_port, 
-                #          dl_type=ether.ETH_TYPE_IP, nw_src=src_ip, 
-                #          nw_dst=dst_ip, actions=actions)
+                #print "Adding IP flow with matching %s->%s" % (src_ip, dst_ip)
                 self.send_ip_flow(datapath, in_port, src_ip, dst_ip, out_port)
-            else:
-                print "Need to flood"
+            #else:
+                #print "Need to flood"
 
 
             data = None
             if msg.buffer_id == ofproto.OFP_NO_BUFFER:
                 data = msg.data
 
-            print "Sending packet_out %s->%s on %d" % (src_ip, dst_ip, out_port)
             out = parser.OFPPacketOut(datapath=datapath, 
                                       buffer_id=msg.buffer_id,
                                   in_port=in_port, actions=actions, data=data)
             datapath.send_msg(out)
-        else:
-            print "Unknown packet type"
+        #else:
+        #    print "Unknown packet type"
             
 
             
