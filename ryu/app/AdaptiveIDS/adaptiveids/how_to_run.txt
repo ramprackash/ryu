@@ -13,3 +13,17 @@ run echo_server.py
 run echo_client.py
 7. At h3
 run echo_client_fast.py
+
+# To test the rules:
+The default rules currently in place will:
+
+1. print an alert message when h1 -> h2 exceeds 10pps
+   This can be verified by "h1 ping -i .01 h2" from the mininet prompt
+2. disallow h2 -> h3 traffic
+   This can be verified by "h2 ping h3" from the mininet prompt
+   "sudo ovs-ofctl -O OpenFlow13 dump-flows s1" should show a "drop" action 
+   rule for 10.0.0.2 -> 10.0.0.3
+3. drop h1 -> h3 traffic when it exceeds 10 pps
+   This can be verified by "h1 ping -i .01 h3" from mininet prompt
+   You should see some packets getting response and then it should stop. Again
+   dump the flows to see "drop" action rule for h1 -> h3
