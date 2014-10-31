@@ -6,6 +6,8 @@ Created on Oct 16, 2014
 
 
 import random
+from ryu.ofproto import inet
+
 
 class TrafficMonitor:
     def __init__(self, statemachine, owner):
@@ -38,9 +40,24 @@ class TrafficMonitor:
                 if flow_name in self.avg_outpackets:
                     if delta != 0:
                         avg_delta = delta / 10
+                        if "ip_proto" in stat.match:
+                            if int(stat.match['ip_proto']) == \
+                                    inet.IPPROTO_ICMP:
+                                ip_proto = "icmp"
+                            elif int(stat.match['ip_proto']) == \
+                                    inet.IPPROTO_UDP:
+                                ip_proto = "udp"
+                            elif int(stat.match['ip_proto']) == \
+                                    inet.IPPROTO_TCP:
+                                ip_proto = "tcp"
+                            else:
+                                ip_proto="any"
+                        else:
+                            ip_proto = "any"
                         result = self.owner.lp_rules.impose(ev.msg.datapath,
                                      stat.match['in_port'], 
                                      stat.instructions[0].actions[0].port,
+                                     proto=ip_proto,
                                      src_ip=stat.match['ipv4_src'],
                                  dst_ip=stat.match['ipv4_dst'], pps=avg_delta)
                         if (result != None):

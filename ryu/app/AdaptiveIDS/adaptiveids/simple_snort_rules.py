@@ -68,24 +68,34 @@ class Rule:
         dip_match = dport_match = pps_match = 0
         result = None
 
-        if ((proto != "any") and (proto == self.proto)) or (proto == "any"):
+        if ((self.proto != "any") and (proto == self.proto)) or \
+                (self.proto == "any"):
             prot_match = 1
-        if ((src_ip != "any") and (src_ip == self.src_ip)) or (src_ip == "any"):
+        if ((self.src_ip != "any") and (src_ip == self.src_ip)) or \
+                (self.src_ip == "any"):
             sip_match = 1
-        if ((src_port != "any") and (src_port == self.src_port)) or \
-                (src_port == "any"):
+        if ((self.src_port != "any") and (src_port == self.src_port)) or \
+                (self.src_port == "any"):
             sport_match = 1
-        if ((dst_ip != "any") and (dst_ip == self.dst_ip)) or (dst_ip == "any"):
+        if ((self.dst_ip != "any") and (dst_ip == self.dst_ip)) or \
+                (self.dst_ip == "any"):
             dip_match = 1
-        if ((dst_port != "any") and (dst_port == self.dst_port)) or \
-                (dst_port == "any"):
+        if ((self.dst_port != "any") and (dst_port == self.dst_port)) or \
+                (self.dst_port == "any"):
             dport_match = 1
         if "pps" in self.options:
-            if ((pps != -1) and (pps >= int(self.options["pps"]))) or \
-                    (pps == -1):
+            if ((int(self.options["pps"]) != -1 and \
+                pps >= int(self.options["pps"])) or \
+                    (int(self.options["pps"])== -1)):
                 pps_match = 1
         else:
             pps_match = 1
+
+        #print("To match %s:%s:%s:%s:%s:%d" % (proto, src_ip, src_port, 
+        #    dst_ip, dst_port, pps))
+        #print("In Rule: %s:%s:%s:%s:%s:%d" % (self.proto, self.src_ip,
+        #    self.src_port, self.dst_ip, self.dst_port, int(self.options["pps"])))
+
         if (prot_match == sip_match == sport_match == dip_match == \
                 dport_match == pps_match == 1):
             if "msg" in self.options and self.action == "alert":
@@ -183,6 +193,10 @@ class SnortParser:
             else:
                 return result
 
+    """ 
+    " Programs only drop flows if required. The caller needs to take necessary
+    " action for all other cases
+    """
     def impose(self, datapath, in_port, out_port, proto="any", src_ip="any", 
             src_port="any", dst_ip="any", dst_port="any", pps=-1):
 
@@ -197,9 +211,10 @@ class SnortParser:
             else:
                 actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
 
-        if out_port != datapath.ofproto.OFPP_FLOOD:
-            self.owner.send_ip_flow(datapath, in_port, src_ip, dst_ip, out_port,
-                    drop=drop_flag)
+        if drop_flag == True:
+            self.owner.send_ip_flow(datapath, in_port, out_port, proto=proto, 
+                    src_ip=src_ip, src_port=src_port, dst_ip=dst_ip, 
+                    dst_port=dst_port, drop=drop_flag)
         return result
 
 

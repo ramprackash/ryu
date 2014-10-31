@@ -19,6 +19,7 @@ from ryu.lib.packet import tcp
 from ryu.lib.packet import udp
 from ryu.lib import hub
 from ryu.ofproto import ether
+from ryu.ofproto import inet
 
 import sys
 import ids_state_machine
@@ -93,7 +94,9 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
     def _flow_stats_reply_handler(self, ev):
         self.traffic_mon.process_flow_stats(ev)
 
-    def send_ip_flow(self, datapath, in_port, src_ip, dst_ip, out_port, drop=False):
+    def send_ip_flow(self, datapath, in_port, out_port, proto="any", 
+            src_ip="any", src_port="any", dst_ip="any", dst_port="any", 
+            drop=False):
         ofp = datapath.ofproto
         ofp_parser = datapath.ofproto_parser
  
@@ -101,9 +104,25 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         table_id = 0
         idle_timeout = hard_timeout = 0
         priority = 32768
+        ip_proto = 0
         buffer_id = ofp.OFP_NO_BUFFER
-        match = ofp_parser.OFPMatch(in_port=in_port, eth_type=ether.ETH_TYPE_IP,
-                                    ipv4_src=src_ip, ipv4_dst=dst_ip)
+        if proto == "icmp":
+            ip_proto = inet.IPPROTO_ICMP
+        if proto == "tcp":
+            ip_proto = inet.IPPROTO_TCP
+        if proto == "udp":
+            ip_proto = inet.IPPROTO_UDP
+
+        if (ip_proto != 0):
+            match = ofp_parser.OFPMatch(in_port=in_port, 
+                    eth_type=ether.ETH_TYPE_IP,
+                    ipv4_src=src_ip, ipv4_dst=dst_ip, ip_proto=ip_proto)
+        else:
+            match = ofp_parser.OFPMatch(in_port=in_port, 
+                    eth_type=ether.ETH_TYPE_IP,
+                    ipv4_src=src_ip, ipv4_dst=dst_ip)
+
+        #print("Proto = %s (%d)" % (proto, ip_proto))
         if drop == False:
             actions = [ofp_parser.OFPActionOutput(out_port)]
         else:
@@ -192,10 +211,11 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
             # Check if this packet hits any light probe rule and take
             # necessary action
+            #print ("%d : %d : %s : %s : %s : %s : %s" % (in_port, out_port,
+            #    proto, src_ip, sport, dst_ip, dport))
             result = self.lp_rules.impose(datapath, in_port, out_port,
                     proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
                     dst_port=dport)
-
             if (result != None):
                 if "drop" in result:
                     drop_flag = True
@@ -205,6 +225,17 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
             if drop_flag == False:
                 actions = [parser.OFPActionOutput(out_port)]
+
+                if (out_port != ofproto.OFPP_FLOOD):
+                    self.send_ip_flow(datapath, in_port, out_port,
+                            proto=proto, 
+                            src_ip=src_ip,
+                            src_port=sport,
+                            dst_ip=dst_ip, 
+                            dst_port=dport,
+                            drop=drop_flag)
+
+                #Now deal with the incoming packet
                 data = None
                 if msg.buffer_id == ofproto.OFP_NO_BUFFER:
                     data = msg.data
