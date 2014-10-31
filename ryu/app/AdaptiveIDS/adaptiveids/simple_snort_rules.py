@@ -77,6 +77,8 @@ class Rule:
         if "pps" in self.options:
             if ((pps != -1) and (pps >= int(self.options["pps"]))) or (pps == -1):
                 pps_match = 1
+        else:
+            pps_match = 1
         if prot_match == sip_match == sport_match == dip_match == dport_match == pps_match == 1:
             if "msg" in self.options and self.action == "alert":
                 return [self.action, self.options["msg"]]
@@ -101,12 +103,13 @@ class SnortParser:
     # 2945-2961, 2978-2989, 3013) and list (rule in # line 2424). 
     # Need to tweak the grammar a bit to get this to work
 
-    def __init__(self, rule_file="./snort.rules"):
+    def __init__(self, owner, rule_file="./snort.rules"):
         """
         " Can be called with one file for light-probing rules and another for
         " deep probing rules - so not exactly a singleton as mentioned above
         """
 
+        self.owner = owner
         self.rules = []
 
         # Snort rules take the form:

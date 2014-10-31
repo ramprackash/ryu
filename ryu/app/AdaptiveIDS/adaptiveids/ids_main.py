@@ -41,8 +41,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.ip_to_port = {}
         self.mac_to_port = {}
         self.datapaths = {}
-        self.lp_rules = simple_snort_rules.SnortParser(rule_file="./light_probe.rules")
-        self.dp_rules = simple_snort_rules.SnortParser(rule_file="./deep_probe.rules")
+        self.lp_rules = simple_snort_rules.SnortParser(self, rule_file="./light_probe.rules")
+        self.dp_rules = simple_snort_rules.SnortParser(self, rule_file="./deep_probe.rules")
         if (self.lp_rules == "error") or (self.dp_rules == "error"):
             sys.exit(-1)
 
@@ -92,7 +92,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
     def _flow_stats_reply_handler(self, ev):
         self.traffic_mon.process_flow_stats(ev)
 
-    def send_ip_flow(self, datapath, in_port, src_ip, dst_ip, out_port):
+    def send_ip_flow(self, datapath, in_port, src_ip, dst_ip, out_port, drop=False):
         ofp = datapath.ofproto
         ofp_parser = datapath.ofproto_parser
  
@@ -103,7 +103,10 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         buffer_id = ofp.OFP_NO_BUFFER
         match = ofp_parser.OFPMatch(in_port=in_port, eth_type=ether.ETH_TYPE_IP,
                                     ipv4_src=src_ip, ipv4_dst=dst_ip)
-        actions = [ofp_parser.OFPActionOutput(out_port)]
+        if drop == False:
+            actions = [ofp_parser.OFPActionOutput(out_port)]
+        else:
+            actions = ""
         inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS,
                                                  actions)]
         req = ofp_parser.OFPFlowMod(datapath, cookie, cookie_mask,
@@ -161,39 +164,63 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             datapath.send_msg(out)
 
         elif IPV4 in header_list:
+            drop_flag = False
             eth = pkt.get_protocols(ethernet.ethernet)[0]
             dst = eth.dst
             src = eth.src
+            proto = "any"
+            sport  = "any"
+            dport  = "any"
             src_ip = header_list[IPV4].src
             dst_ip = header_list[IPV4].dst
             self.ip_to_port[dpid][src_ip] = in_port
+            if TCP in header_list:
+                proto="tcp"
+                sport = header_list[TCP].src_port
+                dport = header_list[TCP].dst_port
+            if UDP in header_list:
+                proto="udp"
+                sport = header_list[UDP].src_port
+                dport = header_list[UDP].dst_port
+            if ICMP in header_list:
+                proto="icmp"
             if dst_ip in self.ip_to_port[dpid]:
                 out_port = self.ip_to_port[dpid][dst_ip]
             else:
                 out_port = ofproto.OFPP_FLOOD
 
-            actions = [parser.OFPActionOutput(out_port)]
+            result = self.lp_rules.getMatch(src_ip=src_ip, dst_ip=dst_ip)
+            print result
+            if (result != None):
+                if "alert" in result: 
+                    print("ALERT : %s" % result[1])
+                if "drop" in result:
+                    drop_flag = True
+                    actions = ""
+                else:
+                    actions = [parser.OFPActionOutput(out_port)]
+
             if out_port != ofproto.OFPP_FLOOD:
                 match = parser.OFPMatch(in_port= in_port, ipv4_src=src_ip, 
                                         ipv4_dst=dst_ip)
                 match.set_dl_type(ether.ETH_TYPE_IP)
                 #print "Adding IP flow with matching %s->%s" % (src_ip, dst_ip)
-                self.send_ip_flow(datapath, in_port, src_ip, dst_ip, out_port)
+                self.send_ip_flow(datapath, in_port, src_ip, dst_ip, out_port,
+                        drop=drop_flag)
             #else:
                 #print "Need to flood"
 
 
-            data = None
-            if msg.buffer_id == ofproto.OFP_NO_BUFFER:
-                data = msg.data
+            if drop_flag == False:
+                actions = [parser.OFPActionOutput(out_port)]
+                data = None
+                if msg.buffer_id == ofproto.OFP_NO_BUFFER:
+                    data = msg.data
 
-            out = parser.OFPPacketOut(datapath=datapath, 
+                out = parser.OFPPacketOut(datapath=datapath, 
                                       buffer_id=msg.buffer_id,
                                   in_port=in_port, actions=actions, data=data)
-            datapath.send_msg(out)
-        #else:
-        #    print "Unknown packet type"
-            
+                datapath.send_msg(out)
 
             
 #if __name__ == "__main__":

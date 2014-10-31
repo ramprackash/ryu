@@ -26,5 +26,6 @@
 
 # Prints "Traffic spike detected" every time flow 10.0.0.1 -> 10.0.0.2 exceeds 10 pps
 alert tcp 10.0.0.1 any -> 10.0.0.2 any (msg:"I see a lot of traffic(h1->h2)"; pps:5;) 
-drop tcp 10.0.0.2 any -> 10.0.0.3 any (msg:"This is h2->h3"; pps:100;) 
+drop tcp 10.0.0.2 any -> 10.0.0.3 any (msg:"This is h2->h3";) 
+drop tcp 10.0.0.1 any -> 10.0.0.3 any (pps:10;)
 drop tcp 10.0.0.3 any -> 10.0.0.4 any (msg:"This is h3->h4"; pps:1000;) 
