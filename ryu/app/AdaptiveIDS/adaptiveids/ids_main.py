@@ -41,13 +41,13 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.ip_to_port = {}
         self.mac_to_port = {}
         self.datapaths = {}
-        self.lp_rules = simple_snort_rules.SnortParser(self, rule_file="./light_probe.rules")
-        self.dp_rules = simple_snort_rules.SnortParser(self, rule_file="./deep_probe.rules")
+        self.lp_rules = simple_snort_rules.SnortParser(self, 
+                                           rule_file="./light_probe.rules")
+        self.dp_rules = simple_snort_rules.SnortParser(self, 
+                                           rule_file="./deep_probe.rules")
         if (self.lp_rules == "error") or (self.dp_rules == "error"):
             sys.exit(-1)
 
-        self.lp_rules.dumpRules()
-            
         self.monitor_thread = hub.spawn(self._monitor)                
         
         self.state_machine = ids_state_machine.IDSStateMachine()
@@ -62,7 +62,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             self.inspect_traffic()
             time.sleep(10)
     
-    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, DEAD_DISPATCHER])
+    @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, 
+                                                DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
         datapath = ev.datapath
         if ev.state == MAIN_DISPATCHER:
@@ -189,27 +190,18 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             else:
                 out_port = ofproto.OFPP_FLOOD
 
-            result = self.lp_rules.getMatch(src_ip=src_ip, dst_ip=dst_ip)
-            print result
+            # Check if this packet hits any light probe rule and take
+            # necessary action
+            result = self.lp_rules.impose(datapath, in_port, out_port,
+                    proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
+                    dst_port=dport)
+
             if (result != None):
-                if "alert" in result: 
-                    print("ALERT : %s" % result[1])
                 if "drop" in result:
                     drop_flag = True
                     actions = ""
                 else:
                     actions = [parser.OFPActionOutput(out_port)]
-
-            if out_port != ofproto.OFPP_FLOOD:
-                match = parser.OFPMatch(in_port= in_port, ipv4_src=src_ip, 
-                                        ipv4_dst=dst_ip)
-                match.set_dl_type(ether.ETH_TYPE_IP)
-                #print "Adding IP flow with matching %s->%s" % (src_ip, dst_ip)
-                self.send_ip_flow(datapath, in_port, src_ip, dst_ip, out_port,
-                        drop=drop_flag)
-            #else:
-                #print "Need to flood"
-
 
             if drop_flag == False:
                 actions = [parser.OFPActionOutput(out_port)]

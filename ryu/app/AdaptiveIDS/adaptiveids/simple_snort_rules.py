@@ -5,6 +5,7 @@
 import sys, traceback
 import re
 from pyparsing import *
+#from ryu.ofproto import ofproto_v1_3
 
 
 ipAddress = Combine(Word(nums) + ('.' + Word(nums))*3)
@@ -32,8 +33,10 @@ option_key = Word(alphas+"_"+"-")
 option_val = Word(alphanums+"."+"["+"]"+"$"+"_"+"-"+">"+"\""+"("+")" \
         +"\\"+","+" "+"'"+"/"+"?"+"|"+"="+"*"+"!"+":"+"~"\
                              +"{"+"}"+"<"+"&"+"^"+"%"+"*"+"+"+"#")
-kvp        = option_key + Optional(Literal(":")) + Optional(option_val) + Literal(";").suppress()
-rule_option = Literal("(").suppress() + OneOrMore(kvp) + Literal(")").suppress()
+kvp = option_key + Optional(Literal(":")) + \
+                    Optional(option_val) + Literal(";").suppress()
+rule_option = Literal("(").suppress() + OneOrMore(kvp) + \
+                    Literal(")").suppress()
 
 class Rule:
     def __init__(self, action, proto, src_ip, dst_ip, src_port, dst_port,
@@ -58,28 +61,33 @@ class Rule:
             else:
                 i = i+1
 
-    def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any", 
+    def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any",
             dst_port="any", pps=-1):
-        #print("Checking %s:%s:%d" % (self.src_ip, self.dst_ip, int(self.options["pps"])))
-        prot_match = sip_match = sport_match = dip_match = dport_match = pps_match = 0
+
+        prot_match = sip_match = sport_match = 0
+        dip_match = dport_match = pps_match = 0
         result = None
 
         if ((proto != "any") and (proto == self.proto)) or (proto == "any"):
             prot_match = 1
         if ((src_ip != "any") and (src_ip == self.src_ip)) or (src_ip == "any"):
             sip_match = 1
-        if ((src_port != "any") and (src_port == self.src_port)) or (src_port == "any"):
+        if ((src_port != "any") and (src_port == self.src_port)) or \
+                (src_port == "any"):
             sport_match = 1
         if ((dst_ip != "any") and (dst_ip == self.dst_ip)) or (dst_ip == "any"):
             dip_match = 1
-        if ((dst_port != "any") and (dst_port == self.dst_port)) or (dst_port == "any"):
+        if ((dst_port != "any") and (dst_port == self.dst_port)) or \
+                (dst_port == "any"):
             dport_match = 1
         if "pps" in self.options:
-            if ((pps != -1) and (pps >= int(self.options["pps"]))) or (pps == -1):
+            if ((pps != -1) and (pps >= int(self.options["pps"]))) or \
+                    (pps == -1):
                 pps_match = 1
         else:
             pps_match = 1
-        if prot_match == sip_match == sport_match == dip_match == dport_match == pps_match == 1:
+        if (prot_match == sip_match == sport_match == dip_match == \
+                dport_match == pps_match == 1):
             if "msg" in self.options and self.action == "alert":
                 return [self.action, self.options["msg"]]
             else:
@@ -129,13 +137,16 @@ class SnortParser:
                             tokens[5], tokens[3], tokens[6], tokens[7]))
                     index = index + 1
                 except:
-                    print "\nSyntax error at line %d in rule: %s" % (index, rule)
+                    print "\nSyntax error at line %d in rule: %s" % \
+                            (index, rule)
                     traceback.print_exc(file=sys.stdout)
                     return "error"
                     break
 
         self.num_rules = index;
-        print "Total number of rules from %s: %d : %d" % (rule_file, self.num_rules, len(self.rules))
+        print "Total number of rules from %s: %d : %d" % (rule_file, 
+                                                          self.num_rules, 
+                                                          len(self.rules))
 
     def dumpRules(self):
         index = 0
@@ -159,8 +170,8 @@ class SnortParser:
         """
         # TODO
 
-    def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any", 
-            dst_port="any", pps=0):
+    def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any",
+            dst_port="any", pps=-1):
         index = 0
         while (index < len(self.rules)):
             rule = self.rules[index]
@@ -171,6 +182,27 @@ class SnortParser:
                 next
             else:
                 return result
+
+    def impose(self, datapath, in_port, out_port, proto="any", src_ip="any", 
+            src_port="any", dst_ip="any", dst_port="any", pps=-1):
+
+        drop_flag = False
+        result = self.getMatch(proto, src_ip, src_port, dst_ip, dst_port, pps)
+        if (result != None):
+            if "alert" in result: 
+                print("!! ALERT : %s !!" % result[1])
+            if "drop" in result:
+                drop_flag = True
+                actions = ""
+            else:
+                actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
+
+        if out_port != datapath.ofproto.OFPP_FLOOD:
+            self.owner.send_ip_flow(datapath, in_port, src_ip, dst_ip, out_port,
+                    drop=drop_flag)
+        return result
+
+
 
 
 # Testing

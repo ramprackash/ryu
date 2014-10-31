@@ -38,24 +38,17 @@ class TrafficMonitor:
                 if flow_name in self.avg_outpackets:
                     if delta != 0:
                         avg_delta = delta / 10
-                        print "Matching with snort rules delta = %d" % avg_delta
-                        result = self.owner.lp_rules.getMatch(
+                        result = self.owner.lp_rules.impose(ev.msg.datapath,
+                                     stat.match['in_port'], 
+                                     stat.instructions[0].actions[0].port,
                                      src_ip=stat.match['ipv4_src'],
                                  dst_ip=stat.match['ipv4_dst'], pps=avg_delta)
                         if (result != None):
                             self.statemachine.enforce_deep_probing()
                             self.statemachine.print_state()
-                            if "alert" in result: 
-                                print("ALERT : %s" % result[1])
-                            if "drop" in result:
-                                self.owner.send_ip_flow(ev.msg.datapath,
-                                        stat.match['in_port'],
-                                        stat.match['ipv4_src'],
-                                        stat.match['ipv4_dst'],
-                                        stat.instructions[0].actions[0].port,
-                                        drop=True)
                     
-                        self.avg_outpackets[flow_name] = (self.avg_outpackets[flow_name] + int(delta))/2
+                        self.avg_outpackets[flow_name] = \
+                                (self.avg_outpackets[flow_name] + int(delta))/2
                 else:
                     self.avg_outpackets[flow_name] = int(stat.packet_count)
 
