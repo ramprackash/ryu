@@ -62,10 +62,10 @@ class Rule:
                 i = i+1
 
     def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any",
-            dst_port="any", pps=-1):
+            dst_port="any", pps=-1, pkt_data=None):
 
         prot_match = sip_match = sport_match = 0
-        dip_match = dport_match = pps_match = 0
+        dip_match = dport_match = pps_match = pkt_match = 0
         result = None
 
         if ((self.proto != "any") and (proto == self.proto)) or \
@@ -80,7 +80,9 @@ class Rule:
         if ((self.dst_ip != "any") and (dst_ip == self.dst_ip)) or \
                 (self.dst_ip == "any"):
             dip_match = 1
-        if ((self.dst_port != "any") and (dst_port == self.dst_port)) or \
+
+        #print "PORT : %s : %s\n" % (dst_port, self.dst_port)
+        if ((self.dst_port != "any") and (str(dst_port) == self.dst_port)) or \
                 (self.dst_port == "any"):
             dport_match = 1
         if "pps" in self.options:
@@ -91,13 +93,30 @@ class Rule:
         else:
             pps_match = 1
 
+        if "content" in self.options:
+            if (pkt_data == None):
+                pkt_match = 1
+            else:
+                pattern = str(self.options["content"])
+                searchresult = re.search(pattern[1:len(pattern)-1], str(pkt_data)) 
+                if searchresult != None:
+                    #print "MATCH MATCH MATCH pkt contents: %s does not match %s (%s)" % (str(pkt_data), pattern[1:len(pattern)-1], searchresult)
+                    #print "\n"
+                    pkt_match = 1
+                else:
+                    #print "Incoming pkt contents: %s does not match %s %s" % (str(pkt_data), pattern[1:len(pattern)-1], searchresult) 
+                    #print "\n"
+                    pkt_match = 0
+        else:
+            pkt_match = 1
+
         #print("To match %s:%s:%s:%s:%s:%d" % (proto, src_ip, src_port, 
         #    dst_ip, dst_port, pps))
         #print("In Rule: %s:%s:%s:%s:%s:%d" % (self.proto, self.src_ip,
         #    self.src_port, self.dst_ip, self.dst_port, int(self.options["pps"])))
 
         if (prot_match == sip_match == sport_match == dip_match == \
-                dport_match == pps_match == 1):
+                dport_match == pps_match == pkt_match == 1):
             if "msg" in self.options and self.action == "alert":
                 return [self.action, self.options["msg"]]
             else:
@@ -181,12 +200,12 @@ class SnortParser:
         # TODO
 
     def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any",
-            dst_port="any", pps=-1):
+            dst_port="any", pps=-1, pkt_data=None):
         index = 0
         while (index < len(self.rules)):
             rule = self.rules[index]
             result = rule.getMatch(proto, src_ip, 
-                    src_port, dst_ip, dst_port, pps)
+                    src_port, dst_ip, dst_port, pps, pkt_data)
             index = index + 1
             if result == None:
                 next
@@ -198,10 +217,11 @@ class SnortParser:
     " action for all other cases
     """
     def impose(self, datapath, in_port, out_port, proto="any", src_ip="any", 
-            src_port="any", dst_ip="any", dst_port="any", pps=-1):
+            src_port="any", dst_ip="any", dst_port="any", pps=-1, pkt_data=None):
 
         drop_flag = False
-        result = self.getMatch(proto, src_ip, src_port, dst_ip, dst_port, pps)
+        result = self.getMatch(proto, src_ip, src_port, dst_ip, dst_port, pps,
+                pkt_data)
         if (result != None):
             if "alert" in result: 
                 print("!! ALERT : %s !!" % result[1])

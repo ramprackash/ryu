@@ -42,6 +42,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.ip_to_port = {}
         self.mac_to_port = {}
         self.datapaths = {}
+        self.set_paths = {}
         self.lp_rules = simple_snort_rules.SnortParser(self, 
                                            rule_file="./light_probe.rules")
         self.dp_rules = simple_snort_rules.SnortParser(self, 
@@ -123,8 +124,10 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                     ipv4_src=src_ip, ipv4_dst=dst_ip)
 
         #print("Proto = %s (%d)" % (proto, ip_proto))
+        #Always mirror to controller
         if drop == False:
-            actions = [ofp_parser.OFPActionOutput(out_port)]
+            actions = [ofp_parser.OFPActionOutput(out_port),
+                    ofp_parser.OFPActionOutput(ofp.OFPP_CONTROLLER)]
         else:
             actions = ""
         inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS,
@@ -151,6 +154,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         in_port = msg.match['in_port']
         self.mac_to_port.setdefault(dpid, {})
         self.ip_to_port.setdefault(dpid, {})
+        flow_exists = 0
 
         pkt = packet.Packet(msg.data)
         #TODO: Check if str(pkt) can be used for content based inspections viz.:
@@ -215,7 +219,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             #    proto, src_ip, sport, dst_ip, dport))
             result = self.lp_rules.impose(datapath, in_port, out_port,
                     proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
-                    dst_port=dport)
+                    dst_port=dport, pkt_data=pkt)
             if (result != None):
                 if "drop" in result:
                     drop_flag = True
@@ -227,23 +231,29 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                 actions = [parser.OFPActionOutput(out_port)]
 
                 if (out_port != ofproto.OFPP_FLOOD):
-                    self.send_ip_flow(datapath, in_port, out_port,
+                    key = str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)
+                    if key not in self.set_paths.keys():
+                        self.send_ip_flow(datapath, in_port, out_port,
                             proto=proto, 
                             src_ip=src_ip,
                             src_port=sport,
                             dst_ip=dst_ip, 
                             dst_port=dport,
                             drop=drop_flag)
+                        self.set_paths[str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)] = 1
+                    else:
+                        flow_exists = 1
 
-                #Now deal with the incoming packet
-                data = None
-                if msg.buffer_id == ofproto.OFP_NO_BUFFER:
-                    data = msg.data
+                #Now deal with the incoming packet if there is no flow
+                if flow_exists == 0:
+                    data = None
+                    if msg.buffer_id == ofproto.OFP_NO_BUFFER:
+                        data = msg.data
 
-                out = parser.OFPPacketOut(datapath=datapath, 
-                                      buffer_id=msg.buffer_id,
-                                  in_port=in_port, actions=actions, data=data)
-                datapath.send_msg(out)
+                    out = parser.OFPPacketOut(datapath=datapath, 
+                        buffer_id=msg.buffer_id,
+                        in_port=in_port, actions=actions, data=data)
+                    datapath.send_msg(out)
 
             
 #if __name__ == "__main__":
