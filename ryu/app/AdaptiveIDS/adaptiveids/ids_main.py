@@ -28,6 +28,8 @@ import simple_snort_rules
 
 import time
 
+import flows
+
 # For parsing packet_in 
 ETHERNET = ethernet.ethernet.__name__
 IPV4 = ipv4.ipv4.__name__
@@ -43,6 +45,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.mac_to_port = {}
         self.datapaths = {}
         self.set_paths = {}
+        self.flows = flows.Flows(self)
         self.lp_rules = simple_snort_rules.SnortParser(self, 
                                            rule_file="./light_probe.rules")
         self.dp_rules = simple_snort_rules.SnortParser(self, 
@@ -52,7 +55,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
         self.monitor_thread = hub.spawn(self._monitor)                
         
-        self.state_machine = ids_state_machine.IDSStateMachine()
+        self.state_machine = ids_state_machine.IDSStateMachine(self)
         self.traffic_mon = traffic_monitor.TrafficMonitor(self.state_machine,
                 self)
     
@@ -95,7 +98,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
     def _flow_stats_reply_handler(self, ev):
         self.traffic_mon.process_flow_stats(ev)
 
-    def send_ip_flow(self, datapath, in_port, out_port, proto="any", 
+    def send_ip_flow(self, datapath, command, in_port, out_port, proto="any", 
             src_ip="any", src_port="any", dst_ip="any", dst_port="any", 
             drop=False):
         ofp = datapath.ofproto
@@ -133,13 +136,14 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS,
                                                  actions)]
         req = ofp_parser.OFPFlowMod(datapath, cookie, cookie_mask,
-                                    table_id, ofp.OFPFC_ADD,
+                                    table_id, command,
                                     idle_timeout, hard_timeout,
                                     priority, buffer_id,
                                     ofp.OFPP_ANY, ofp.OFPG_ANY,
                                     ofp.OFPFF_SEND_FLOW_REM,
                                     match, inst)
         datapath.send_msg(req)
+
     
 
     # Learn a host's presence based on the received ARP packet and program flow
@@ -231,16 +235,38 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                 actions = [parser.OFPActionOutput(out_port)]
 
                 if (out_port != ofproto.OFPP_FLOOD):
-                    key = str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)
-                    if key not in self.set_paths.keys():
-                        self.send_ip_flow(datapath, in_port, out_port,
+                    reinstate_flag = False
+                    #key = str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)
+                    #if key not in self.set_paths.keys():
+                    #    self.send_ip_flow(datapath, in_port, out_port,
+                    #        proto=proto, 
+                    #        src_ip=src_ip,
+                    #        src_port=sport,
+                    #        dst_ip=dst_ip, 
+                    #        dst_port=dport,
+                    #        drop=drop_flag)
+                    #    self.set_paths[str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)] = 1
+                    if self.flows.getflow(datapath, src_ip, dst_ip, proto, 
+                            sport, dport) == None:
+                        self.send_ip_flow(datapath, ofproto.OFPFC_ADD, 
+                            in_port, out_port,
                             proto=proto, 
                             src_ip=src_ip,
                             src_port=sport,
                             dst_ip=dst_ip, 
                             dst_port=dport,
                             drop=drop_flag)
-                        self.set_paths[str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)] = 1
+                        if result != None:
+                            matches_rule = True
+                            if "reinstate" in result:
+                                reinstate_flag = True
+                        else:
+                            matches_rule = False
+                        self.flows.addflow(datapath, proto, src_ip, 
+                                sport, dst_ip, 
+                                dport, out_port=out_port,
+                                matches_rule=matches_rule,
+                                reinstate=reinstate_flag)
                     else:
                         flow_exists = 1
 

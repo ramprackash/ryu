@@ -26,6 +26,6 @@
 # Prints "Traffic spike detected" every time flow 10.0.0.1 -> 10.0.0.2 exceeds 10 pps
 alert any 10.0.0.1 any -> 10.0.0.2 80 (msg:"Malicious HTTP req"; content:"diablo";)
 alert any 10.0.0.2 any -> 10.0.0.1 any (msg:"I see a lot of traffic(h1->h2)"; pps:5;) 
-drop icmp 10.0.0.2 any -> 10.0.0.3 any (msg:"This is h2->h3";pps:1;) 
+drop icmp 10.0.0.2 any -> 10.0.0.3 any (msg:"This is h2->h3";pps:1;reinstate:"true";) 
 drop icmp 10.0.0.1 any -> 10.0.0.3 any (pps:10;)
 drop icmp 10.0.0.3 any -> 10.0.0.4 any (msg:"This is h3->h4"; pps:1000;) 

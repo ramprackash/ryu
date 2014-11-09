@@ -117,11 +117,11 @@ class Rule:
 
         if (prot_match == sip_match == sport_match == dip_match == \
                 dport_match == pps_match == pkt_match == 1):
+            result = [ self.action ]
             if "msg" in self.options and self.action == "alert":
-                return [self.action, self.options["msg"]]
-            else:
-                return [self.action]
-        else:
+                result.append(self.options["msg"])
+            if "reinstate" in self.options:
+                result.append("reinstate")
             return result
 
 
@@ -220,10 +220,12 @@ class SnortParser:
             src_port="any", dst_ip="any", dst_port="any", pps=-1, pkt_data=None):
 
         drop_flag = False
+        reinstate_flag = False
         result = self.getMatch(proto, src_ip, src_port, dst_ip, dst_port, pps,
                 pkt_data)
         if (result != None):
             if "alert" in result: 
+                # Can hook into email option here too for alerts
                 print("!! ALERT : %s !!" % result[1])
             if "drop" in result:
                 drop_flag = True
@@ -231,10 +233,18 @@ class SnortParser:
             else:
                 actions = [datapath.ofproto_parser.OFPActionOutput(out_port)]
 
+            if "reinstate" in result:
+                reinstate_flag = True
+
         if drop_flag == True:
-            self.owner.send_ip_flow(datapath, in_port, out_port, proto=proto, 
+            self.owner.send_ip_flow(datapath, datapath.ofproto.OFPFC_MODIFY, 
+                    in_port, out_port, proto=proto, 
                     src_ip=src_ip, src_port=src_port, dst_ip=dst_ip, 
                     dst_port=dst_port, drop=drop_flag)
+            self.owner.flows.addflow(datapath, proto, src_ip, src_port, 
+                    dst_ip, dst_port, in_port=in_port,  out_port=out_port,
+                                matches_rule=True,
+                                reinstate=reinstate_flag)
         return result
 
 

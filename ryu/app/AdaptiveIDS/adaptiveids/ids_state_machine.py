@@ -26,11 +26,12 @@ class IDSTimer(threading.Thread):
         self.start_time = time.time()
 
 class IDSStateMachine:
-    def __init__(self):
+    def __init__(self, owner):
         self.lp_filter = lp_filter.LPFilter()
         self.dp_filter = dp_filter.DPFilter()
         self.state = self.lp_filter
         self.ids_timer = None
+        self.owner = owner
     
     def enforce_deep_probing(self):
         self.state = self.dp_filter
@@ -55,4 +56,5 @@ class IDSStateMachine:
     def process_timer_expiry(self):
         if self.ids_timer != None:
             self.enforce_light_probing()
+            self.owner.flows.cleanup()
             self.ids_timer = None
