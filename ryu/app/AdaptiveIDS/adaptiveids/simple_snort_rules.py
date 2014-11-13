@@ -238,6 +238,10 @@ class SnortParser:
                 reinstate_flag = True
 
         if drop_flag == True:
+            self.owner.send_ip_flow(datapath, datapath.ofproto.OFPFC_ADD, 
+                    in_port, out_port, proto=proto, 
+                    src_ip=src_ip, src_port=src_port, dst_ip=dst_ip, 
+                    dst_port=dst_port, drop=drop_flag)
             self.owner.send_ip_flow(datapath, datapath.ofproto.OFPFC_MODIFY, 
                     in_port, out_port, proto=proto, 
                     src_ip=src_ip, src_port=src_port, dst_ip=dst_ip, 
