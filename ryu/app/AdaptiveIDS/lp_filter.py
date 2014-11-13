@@ -9,7 +9,7 @@ import simple_snort_rules
 class LPFilter:
     def __init__(self, owner):
         self.lp_rules = simple_snort_rules.SnortParser(owner,
-                                           rule_file="./light_probe.rules")
+                                           rule_file="/home/ubuntu/ryu_Project/ryu/app/AdaptiveIDS/light_probe.rules")
         pass
     
     def __name__(self):

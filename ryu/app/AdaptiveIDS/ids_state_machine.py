@@ -50,6 +50,7 @@ class IDSStateMachine:
     def inspect_packets(self, datapath, in_port, out_port, proto="any",
                         src_ip="any", src_port="any", dst_ip="any", 
                         dst_port="any", pps=-1, pkt_data=None):
+	#print 'inspect_packets '+str(pkt_data)
         result =  self.state.inspect_packets(datapath, in_port, out_port, 
                                           proto, src_ip, src_port, dst_ip, 
                                           dst_port, pps, pkt_data)

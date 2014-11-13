@@ -120,14 +120,22 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         #TODO: Check if str(pkt) can be used for content based inspections viz.:
         #where the rules contain options with (content:"0xba 0xad 0xca 0xfe";)
         #print("Pkt IN : %s" % str(pkt))
-
+	
         #Ignore LLDP as it is used by the topology discovery module
         eth = pkt.get_protocols(ethernet.ethernet)[0]
         if eth.ethertype == ether.ETH_TYPE_LLDP:
             return
 
-        header_list = dict((p.protocol_name, p) 
-                for p in pkt.protocols if type(p) != str)
+        #header_list = dict((p.protocol_name, p) 
+        #        for p in pkt.protocols if type(p) != str)
+	header_list = {}
+	pkt_data = None
+	for p in pkt.protocols:
+	    if type(p) != str:
+		header_list[p.protocol_name] = p
+	    else :
+		pkt_data = p
+	#print pkt_data
 
         if ARP in header_list:
             src_ip = header_list[ARP].src_ip
@@ -163,12 +171,12 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             self.ip_to_port[dpid][src_ip] = in_port
             if TCP in header_list:
                 proto="tcp"
-                #sport = header_list[TCP].src_port
-                #dport = header_list[TCP].dst_port
+                sport = header_list[TCP].src_port
+                dport = header_list[TCP].dst_port
             if UDP in header_list:
                 proto="udp"
-                #sport = header_list[UDP].src_port
-                #dport = header_list[UDP].dst_port
+                sport = header_list[UDP].src_port
+                dport = header_list[UDP].dst_port
             if ICMP in header_list:
                 proto="icmp"
             if dst_ip in self.ip_to_port[dpid]:
@@ -182,7 +190,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             #    proto, src_ip, sport, dst_ip, dport))
             result = self.datapaths[datapath.id].fsm.inspect_packets(datapath, in_port, out_port,
                     proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
-                    dst_port=dport, pkt_data=pkt)
+                    dst_port=dport, pkt_data=pkt_data)
             if (result != None):
                 if "drop" in result:
                     drop_flag = True
