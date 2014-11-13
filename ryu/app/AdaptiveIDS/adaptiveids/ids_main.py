@@ -46,17 +46,17 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.datapaths = {}
         self.set_paths = {}
         self.flows = flows.Flows(self)
-        self.lp_rules = simple_snort_rules.SnortParser(self, 
-                                           rule_file="./light_probe.rules")
-        self.dp_rules = simple_snort_rules.SnortParser(self, 
-                                           rule_file="./deep_probe.rules")
-        if (self.lp_rules == "error") or (self.dp_rules == "error"):
-            sys.exit(-1)
+        #self.lp_rules = simple_snort_rules.SnortParser(self, 
+        #                                   rule_file="./light_probe.rules")
+        #self.dp_rules = simple_snort_rules.SnortParser(self, 
+        #                                   rule_file="./deep_probe.rules")
+        #if (self.lp_rules == "error") or (self.dp_rules == "error"):
+        #    sys.exit(-1)
 
         self.monitor_thread = hub.spawn(self._monitor)                
         
-        self.state_machine = ids_state_machine.IDSStateMachine(self)
-        self.traffic_mon = traffic_monitor.TrafficMonitor(self.state_machine,
+        self.fsm = ids_state_machine.IDSStateMachine(self)
+        self.traffic_mon = traffic_monitor.TrafficMonitor(self.fsm,
                 self)
     
     def inspect_traffic(self):
@@ -221,7 +221,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             # necessary action
             #print ("%d : %d : %s : %s : %s : %s : %s" % (in_port, out_port,
             #    proto, src_ip, sport, dst_ip, dport))
-            result = self.lp_rules.impose(datapath, in_port, out_port,
+            result = self.fsm.inspect_packets(datapath, in_port, out_port,
                     proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
                     dst_port=dport, pkt_data=pkt)
             if (result != None):

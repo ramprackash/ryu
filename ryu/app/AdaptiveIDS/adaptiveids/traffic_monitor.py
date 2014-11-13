@@ -54,7 +54,8 @@ class TrafficMonitor:
                                 ip_proto="any"
                         else:
                             ip_proto = "any"
-                        result = self.owner.lp_rules.impose(ev.msg.datapath,
+
+                        result = self.owner.fsm.inspect_packets(ev.msg.datapath,
                                      stat.match['in_port'], 
                                      stat.instructions[0].actions[0].port,
                                      proto=ip_proto,
@@ -62,7 +63,6 @@ class TrafficMonitor:
                                  dst_ip=stat.match['ipv4_dst'], pps=avg_delta)
                         if (result != None):
                             self.statemachine.enforce_deep_probing()
-                            self.statemachine.print_state()
                     
                         self.avg_outpackets[flow_name] = \
                                 (self.avg_outpackets[flow_name] + int(delta))/2

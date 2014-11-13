@@ -110,10 +110,11 @@ class Rule:
         else:
             pkt_match = 1
 
-        #print("To match %s:%s:%s:%s:%s:%d" % (proto, src_ip, src_port, 
-        #    dst_ip, dst_port, pps))
-        #print("In Rule: %s:%s:%s:%s:%s:%d" % (self.proto, self.src_ip,
-        #    self.src_port, self.dst_ip, self.dst_port, int(self.options["pps"])))
+        #if pkt_match == 1:
+        #    print("To match %s:%s:%s:%s:%s" % (proto, src_ip, src_port, 
+        #          dst_ip, dst_port))
+        #    print("In Rule: %s:%s:%s:%s:%s" % (self.proto, self.src_ip,
+        #          self.src_port, self.dst_ip, self.dst_port))
 
         if (prot_match == sip_match == sport_match == dip_match == \
                 dport_match == pps_match == pkt_match == 1):
