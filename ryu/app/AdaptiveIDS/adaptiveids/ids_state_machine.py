@@ -57,9 +57,16 @@ class IDSStateMachine:
          
     def print_state(self):
         if self.state.__name__() == "LPFilter":
-            print('Current state of IDS State Machine - Light Probe Mode')
+            print('Datapath %d- Light Probe Mode' % self.owner.datapath.id)
         else:
-            print('Current state of IDS State Machine - Deep Probe Mode')
+            print('Datapath %d- Deep Probe Mode' % self.owner.datapath.id)
+
+    def get_state(self):
+        if self.state.__name__() == "LPFilter":
+            return "(L)"
+        else:
+            return "(D)"
+            
             
     def process_timer_expiry(self):
         if self.ids_timer != None:

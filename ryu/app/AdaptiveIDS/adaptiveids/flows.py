@@ -13,6 +13,9 @@ class Flow:
         self.out_port = out_port
         self.matches_rule = matches_rule
         self.reinstate = reinstate
+        self.hitcount = 0
+        self.bytecount  = 0
+        self.avgpkts  = 0
 
     def matches(self, proto, sip, sport, dip, dport, out_port="any",
              matches_rule="any"):
@@ -57,8 +60,7 @@ class Flows:
             flow = self._flows[key_tuple]
             if flow.is_reinstate():
                 print "Reinstating flow %s -> %s" % (flow.in_port, flow.out_port)
-                self.owner.send_ip_flow(flow.dp, 
-                        flow.dp.ofproto.OFPFC_DELETE, 
+                self.owner.send_ip_flow(flow.dp.ofproto.OFPFC_DELETE, 
                         flow.in_port, flow.out_port, proto=flow.proto, 
                         src_ip=flow.sip, src_port=flow.sport, dst_ip=flow.dip,
                         dst_port=flow.dport, drop=False)

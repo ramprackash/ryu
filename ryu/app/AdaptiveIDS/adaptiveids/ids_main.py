@@ -25,6 +25,7 @@ import sys
 import ids_state_machine
 import traffic_monitor
 import simple_snort_rules
+import datapath
 
 import time
 
@@ -44,8 +45,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.ip_to_port = {}
         self.mac_to_port = {}
         self.datapaths = {}
-        self.set_paths = {}
-        self.flows = flows.Flows(self)
+        #self.set_paths = {}
+        #self.flows = flows.Flows(self)
         #self.lp_rules = simple_snort_rules.SnortParser(self, 
         #                                   rule_file="./light_probe.rules")
         #self.dp_rules = simple_snort_rules.SnortParser(self, 
@@ -55,9 +56,9 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
         self.monitor_thread = hub.spawn(self._monitor)                
         
-        self.fsm = ids_state_machine.IDSStateMachine(self)
-        self.traffic_mon = traffic_monitor.TrafficMonitor(self.fsm,
-                self)
+        #self.fsm = ids_state_machine.IDSStateMachine(self)
+        #self.traffic_mon = traffic_monitor.TrafficMonitor(self.fsm,
+        #        self)
     
     def inspect_traffic(self):
         self.traffic_mon.process_flow_stats()
@@ -70,20 +71,20 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, 
                                                 DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
-        datapath = ev.datapath
+        dp = ev.datapath
         if ev.state == MAIN_DISPATCHER:
-            if not datapath.id in self.datapaths:
-                self.logger.debug('register datapath: %016x', datapath.id)
-                self.datapaths[datapath.id] = datapath
+            if not dp.id in self.datapaths:
+                self.logger.debug('register datapath: %016x', dp.id)
+                self.datapaths[dp.id] = datapath.IDSDatapath(dp)
             elif ev.state == DEAD_DISPATCHER:
-                if datapath.id in self.datapaths:
-                    self.logger.debug('unregister datapath: %016x', datapath.id)
-                    del self.datapaths[datapath.id]
+                if dp.id in self.datapaths:
+                    self.logger.debug('unregister datapath: %016x', dp.id)
+                    del self.datapaths[dp.id]
 
     def _monitor(self):
         while True:
             for dp in self.datapaths.values():
-                self._request_stats(dp)
+                self._request_stats(dp.datapath)
             hub.sleep(10)
     
     def _request_stats(self, datapath):
@@ -96,53 +97,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
     @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
     def _flow_stats_reply_handler(self, ev):
-        self.traffic_mon.process_flow_stats(ev)
-
-    def send_ip_flow(self, datapath, command, in_port, out_port, proto="any", 
-            src_ip="any", src_port="any", dst_ip="any", dst_port="any", 
-            drop=False):
-        ofp = datapath.ofproto
-        ofp_parser = datapath.ofproto_parser
- 
-        cookie = cookie_mask = 0
-        table_id = 0
-        idle_timeout = hard_timeout = 0
-        priority = 32768
-        ip_proto = 0
-        buffer_id = ofp.OFP_NO_BUFFER
-        if proto == "icmp":
-            ip_proto = inet.IPPROTO_ICMP
-        if proto == "tcp":
-            ip_proto = inet.IPPROTO_TCP
-        if proto == "udp":
-            ip_proto = inet.IPPROTO_UDP
-
-        if (ip_proto != 0):
-            match = ofp_parser.OFPMatch(in_port=in_port, 
-                    eth_type=ether.ETH_TYPE_IP,
-                    ipv4_src=src_ip, ipv4_dst=dst_ip, ip_proto=ip_proto)
-        else:
-            match = ofp_parser.OFPMatch(in_port=in_port, 
-                    eth_type=ether.ETH_TYPE_IP,
-                    ipv4_src=src_ip, ipv4_dst=dst_ip)
-
-        #print("Proto = %s (%d)" % (proto, ip_proto))
-        #Always mirror to controller
-        if drop == False:
-            actions = [ofp_parser.OFPActionOutput(out_port),
-                    ofp_parser.OFPActionOutput(ofp.OFPP_CONTROLLER)]
-        else:
-            actions = ""
-        inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS,
-                                                 actions)]
-        req = ofp_parser.OFPFlowMod(datapath, cookie, cookie_mask,
-                                    table_id, command,
-                                    idle_timeout, hard_timeout,
-                                    priority, buffer_id,
-                                    ofp.OFPP_ANY, ofp.OFPG_ANY,
-                                    ofp.OFPFF_SEND_FLOW_REM,
-                                    match, inst)
-        datapath.send_msg(req)
+        dp = self.datapaths[ev.msg.datapath.id]
+        dp.traffic_mon.process_flow_stats(ev)
 
     
 
@@ -221,7 +177,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             # necessary action
             #print ("%d : %d : %s : %s : %s : %s : %s" % (in_port, out_port,
             #    proto, src_ip, sport, dst_ip, dport))
-            result = self.fsm.inspect_packets(datapath, in_port, out_port,
+            result = self.datapaths[datapath.id].fsm.inspect_packets(datapath, in_port, out_port,
                     proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
                     dst_port=dport, pkt_data=pkt)
             if (result != None):
@@ -246,9 +202,9 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                     #        dst_port=dport,
                     #        drop=drop_flag)
                     #    self.set_paths[str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)] = 1
-                    if self.flows.getflow(datapath, src_ip, dst_ip, proto, 
+                    if self.datapaths[datapath.id].flows.getflow(datapath, src_ip, dst_ip, proto, 
                             sport, dport) == None:
-                        self.send_ip_flow(datapath, ofproto.OFPFC_ADD, 
+                        self.datapaths[datapath.id].send_ip_flow(ofproto.OFPFC_ADD, 
                             in_port, out_port,
                             proto=proto, 
                             src_ip=src_ip,
@@ -262,7 +218,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                                 reinstate_flag = True
                         else:
                             matches_rule = False
-                        self.flows.addflow(datapath, proto, src_ip, 
+                        self.datapaths[datapath.id].flows.addflow(datapath, proto, src_ip, 
                                 sport, dst_ip, 
                                 dport, out_port=out_port,
                                 matches_rule=matches_rule,
