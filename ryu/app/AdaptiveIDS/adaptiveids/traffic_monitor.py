@@ -24,12 +24,11 @@ class TrafficMonitor:
     def process_flow_stats(self, ev):
         body = ev.msg.body
         print ' '
-        print ' '
-        print(bcolors.OKBLUE + 'datapath          '
-                         '  in-port       ipv4-dst     '
+        print(bcolors.OKBLUE + 'Flows In Datapath ' + bcolors.ENDC + '%016x%s' % (ev.msg.datapath.id, self.owner.fsm.get_state()))
+
+        print('in-port       ipv4-src          ipv4-dst     '
                          'out-port  packets   bytes     pps (over last 10s)')
-        print('------------------- '
-                         '-------- ----------------- '
+        print('-------- ----------------- ----------------- '
                          '--------  -------  -------    -------------------' 
                          + bcolors.ENDC)
         for stat in sorted([fl for fl in body if fl.priority == 32768],
@@ -89,19 +88,20 @@ class TrafficMonitor:
 
                 flow.avgpkts = avg_delta
                 if stat.instructions != []:
-                    print('%016x%s %8x %17s %8x %8d %8d %4d' %(
-                        ev.msg.datapath.id, self.owner.fsm.get_state(),
-                        stat.match['in_port'], stat.match['ipv4_dst'],
+                    print('%8x %17s %17s %8x %8d %8d %4d' %(
+                        stat.match['in_port'], stat.match['ipv4_src'], 
+                        stat.match['ipv4_dst'],
                         stat.instructions[0].actions[0].port,
                         stat.packet_count, stat.byte_count, flow.avgpkts))
                 else:
-                    print('%016x%s %8x %17s %8s %8d %8d %4d' %(
-                        ev.msg.datapath.id, self.owner.fsm.get_state(),
-                        stat.match['in_port'], stat.match['ipv4_dst'],
+                    print('%8x %17s %17s %8s %8d %8d %4d' %(
+                        stat.match['in_port'], stat.match['ipv4_src'],
+                        stat.match['ipv4_dst'],
                         bcolors.FAIL + "    drop" + bcolors.ENDC,
                         stat.packet_count, stat.byte_count, flow.avgpkts))
 
                 if flow.avgpkts <= flow.triggerPPS:
-                    print "Going back to Light Probe as spike ended %d < %d" % (flow.avgpkts, flow.triggerPPS)
+                    print("Going back to Light Probe as spike ended %d < %d" % 
+                            (flow.avgpkts, flow.triggerPPS))
                     self.owner.flows.delflow(flow)
                     self.owner.fsm.enforce_light_probing()
