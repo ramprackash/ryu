@@ -26,10 +26,10 @@ class TrafficMonitor:
         print ' '
         print(bcolors.OKBLUE + 'Flows In Datapath ' + bcolors.ENDC + '%016x%s' % (ev.msg.datapath.id, self.owner.fsm.get_state()))
 
-        print(bcolors.OKBLUE + 'in-port       ipv4-src          ipv4-dst     '
-                         'out-port  packets   bytes     pps (over last 10s)')
-        print('-------- ----------------- ----------------- '
-                         '--------  -------  -------    -------------------' 
+        print(bcolors.OKBLUE + 'in-port      ipv4-src          ipv4-dst     '
+                         'out-port  packets   bytes   pps (over last 10s)')
+        print('-------- ----------------- ---------------- '
+                         '--------  -------  -------  -------------------' 
                          + bcolors.ENDC)
         for stat in sorted([fl for fl in body if fl.priority == 32768],
                            key=lambda fl: (fl.match['in_port'],
@@ -88,17 +88,23 @@ class TrafficMonitor:
 
                 flow.avgpkts = avg_delta
                 if stat.instructions != []:
-                    print('%8x %17s %17s %8x %8d %8d %4d' %(
-                        stat.match['in_port'], stat.match['ipv4_src'], 
-                        stat.match['ipv4_dst'],
-                        stat.instructions[0].actions[0].port,
-                        stat.packet_count, stat.byte_count, flow.avgpkts))
+                    print('%8s %17s %17s %8s %8s %8s %4s' %(
+                        '{:^8x}'.format(stat.match['in_port']), 
+                        '{:^17s}'.format(stat.match['ipv4_src']), 
+                        '{:^17s}'.format(stat.match['ipv4_dst']),
+                        '{:^8d}'.format(stat.instructions[0].actions[0].port),
+                        '{:^8d}'.format(stat.packet_count), 
+                        '{:^8d}'.format(stat.byte_count), 
+                        '{:^19d}'.format(flow.avgpkts)))
                 else:
-                    print('%8x %17s %17s %8s %8d %8d %4d' %(
-                        stat.match['in_port'], stat.match['ipv4_src'],
-                        stat.match['ipv4_dst'],
-                        bcolors.FAIL + "    drop" + bcolors.ENDC,
-                        stat.packet_count, stat.byte_count, flow.avgpkts))
+                    print('%8s %17s %17s %8s %8s %8s %4s' %(
+                        '{:^8x}'.format(stat.match['in_port']), 
+                        '{:^17s}'.format(stat.match['ipv4_src']),
+                        '{:^17s}'.format(stat.match['ipv4_dst']),
+                        bcolors.FAIL + " drop   " + bcolors.ENDC,
+                        '{:^8d}'.format(stat.packet_count), 
+                        '{:^8d}'.format(stat.byte_count), 
+                        '{:^19d}'.format(flow.avgpkts)))
 
                 if flow.avgpkts <= flow.triggerPPS:
                     print("Going back to Light Probe as spike ended %d < %d" % 
