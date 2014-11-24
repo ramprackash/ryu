@@ -26,7 +26,7 @@ class TrafficMonitor:
         print ' '
         print(bcolors.OKBLUE + 'Flows In Datapath ' + bcolors.ENDC + '%016x%s' % (ev.msg.datapath.id, self.owner.fsm.get_state()))
 
-        print('in-port       ipv4-src          ipv4-dst     '
+        print(bcolors.OKBLUE + 'in-port       ipv4-src          ipv4-dst     '
                          'out-port  packets   bytes     pps (over last 10s)')
         print('-------- ----------------- ----------------- '
                          '--------  -------  -------    -------------------' 
