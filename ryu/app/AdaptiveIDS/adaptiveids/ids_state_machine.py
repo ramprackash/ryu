@@ -9,6 +9,8 @@ import lp_filter
 import threading
 import time
 
+from traffic_monitor import bcolors
+
 class IDSTimer(threading.Thread):
     def __init__(self, statemachine):
         threading.Thread.__init__(self)
@@ -16,7 +18,7 @@ class IDSTimer(threading.Thread):
         self.state_machine = statemachine
     
     def run(self):
-        while time.time() - self.start_time < 20:
+        while time.time() - self.start_time < 300:
             time.sleep(1)
         print('IDS Timer expired')
         self.state_machine.process_timer_expiry()
@@ -34,7 +36,7 @@ class IDSStateMachine:
     
     def enforce_deep_probing(self):
         self.state = self.dp_filter
-        self.print_state()
+        #self.print_state()
         if self.ids_timer == None:
             self.ids_timer = IDSTimer(self)
             self.ids_timer.start()
@@ -43,7 +45,7 @@ class IDSStateMachine:
     
     def enforce_light_probing(self):
         self.state = self.lp_filter
-        self.print_state()
+        #self.print_state()
     
     def inspect_packets(self, datapath, in_port, out_port, proto="any",
                         src_ip="any", src_port="any", dst_ip="any", 
@@ -57,15 +59,15 @@ class IDSStateMachine:
          
     def print_state(self):
         if self.state.__name__() == "LPFilter":
-            print('Datapath %d- Light Probe Mode' % self.owner.datapath.id)
+            print('Datapath %16d- Light Probe Mode' % self.owner.datapath.id)
         else:
-            print('Datapath %d- Deep Probe Mode' % self.owner.datapath.id)
+            print('Datapath %16d- Deep Probe Mode' % self.owner.datapath.id)
 
     def get_state(self):
         if self.state.__name__() == "LPFilter":
-            return "(L)"
+            return bcolors.OKGREEN + "(L)" + bcolors.ENDC
         else:
-            return "(D)"
+            return bcolors.FAIL + "(D)" + bcolors.ENDC
             
             
     def process_timer_expiry(self):

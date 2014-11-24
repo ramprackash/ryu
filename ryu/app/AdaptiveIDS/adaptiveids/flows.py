@@ -16,6 +16,8 @@ class Flow:
         self.hitcount = 0
         self.bytecount  = 0
         self.avgpkts  = 0
+        self.trigger = False
+        self.triggerPPS = -2
 
     def matches(self, proto, sip, sport, dip, dport, out_port="any",
              matches_rule="any"):
@@ -47,6 +49,18 @@ class Flows:
         key_tuple = (str(dp.id), str(sip), str(dip), str(proto), str(sport),
                     str(dport))
         self._flows[key_tuple] = flow
+        return flow
+
+    def delflow(self, flow):
+        key_tuple = (str(flow.dp.id), str(flow.sip), str(flow.dip),
+                str(flow.proto), str(flow.sport), str(flow.dport))
+        if key_tuple not in self._flows.keys():
+            return
+        self.owner.send_ip_flow(flow.dp.ofproto.OFPFC_DELETE, 
+                flow.in_port, flow.out_port, proto=flow.proto, 
+                src_ip=flow.sip, src_port=flow.sport, dst_ip=flow.dip,
+                dst_port=flow.dport, drop=True)
+        del self._flows[key_tuple]
 
     def getflow(self, dp, sip, dip, proto, sport, dport):
         key_tuple = (str(dp.id), str(sip), str(dip), str(proto), str(sport),

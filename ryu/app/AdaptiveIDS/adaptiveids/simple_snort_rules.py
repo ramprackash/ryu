@@ -5,6 +5,7 @@
 import sys, traceback
 import re
 from pyparsing import *
+from traffic_monitor import bcolors
 #from ryu.ofproto import ofproto_v1_3
 
 
@@ -123,6 +124,10 @@ class Rule:
                 result.append(self.options["msg"])
             if "reinstate" in self.options:
                 result.append("reinstate")
+            if "pps" in self.options and int(self.options["pps"]) != -1 and \
+                    pps >= int(self.options["pps"]):
+                result.append("pps")
+                result.append(self.options["pps"])
             return result
 
 
@@ -227,7 +232,7 @@ class SnortParser:
         if (result != None):
             if "alert" in result: 
                 # Can hook into email option here too for alerts
-                print("!! ALERT : %s !!" % result[1])
+                print(bcolors.WARNING + "!! ALERT : %s !!" % result[1] + bcolors.ENDC)
             if "drop" in result:
                 drop_flag = True
                 actions = ""
@@ -246,10 +251,14 @@ class SnortParser:
                     in_port, out_port, proto=proto, 
                     src_ip=src_ip, src_port=src_port, dst_ip=dst_ip, 
                     dst_port=dst_port, drop=drop_flag)
-            self.owner.flows.addflow(datapath, proto, src_ip, src_port, 
+            flow = self.owner.flows.addflow(datapath, proto, src_ip, src_port, 
                     dst_ip, dst_port, in_port=in_port,  out_port=out_port,
                                 matches_rule=True,
                                 reinstate=reinstate_flag)
+            if pps != -1 and "pps" in result:
+                flow.trigger = True
+                flow.triggerPPS = int(result[result.index("pps") + 1])
+                print "detected pps (%d) is greater than pps in rule (%d)" % (pps, flow.triggerPPS)
         return result
 
 
