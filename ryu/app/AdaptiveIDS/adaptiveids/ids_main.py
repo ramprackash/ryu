@@ -160,12 +160,12 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             self.ip_to_port[dpid][src_ip] = in_port
             if TCP in header_list:
                 proto="tcp"
-                sport = header_list[TCP].src_port
-                dport = header_list[TCP].dst_port
+                #sport = header_list[TCP].src_port
+                #dport = header_list[TCP].dst_port
             if UDP in header_list:
                 proto="udp"
-                sport = header_list[UDP].src_port
-                dport = header_list[UDP].dst_port
+                #sport = header_list[UDP].src_port
+                #dport = header_list[UDP].dst_port
             if ICMP in header_list:
                 proto="icmp"
             if dst_ip in self.ip_to_port[dpid]:

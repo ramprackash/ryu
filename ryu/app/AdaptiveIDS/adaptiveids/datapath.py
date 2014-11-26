@@ -43,9 +43,18 @@ class IDSDatapath:
             ip_proto = inet.IPPROTO_UDP
 
         if (ip_proto != 0):
-            match = ofp_parser.OFPMatch(in_port=in_port, 
+            #if ip_proto == inet.IPPROTO_TCP and src_port != "any":
+            if ip_proto == inet.IPPROTO_TCP:
+                match = ofp_parser.OFPMatch(in_port=in_port, 
                     eth_type=ether.ETH_TYPE_IP,
                     ipv4_src=src_ip, ipv4_dst=dst_ip, ip_proto=ip_proto)
+                    #tcp_src=int(src_port), tcp_dst=int(dst_port))
+            #if ip_proto == inet.IPPROTO_UDP and src_port != "any":
+            if ip_proto == inet.IPPROTO_UDP:
+                match = ofp_parser.OFPMatch(in_port=in_port, 
+                    eth_type=ether.ETH_TYPE_IP,
+                    ipv4_src=src_ip, ipv4_dst=dst_ip, ip_proto=ip_proto)
+                    #udp_src=int(src_port), udp_dst=int(dst_port))
         else:
             match = ofp_parser.OFPMatch(in_port=in_port, 
                     eth_type=ether.ETH_TYPE_IP,
