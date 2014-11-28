@@ -1,0 +1,31 @@
+# The syntax for rules follows the syntax for snort rules (www.snort.org) 
+# <action> <proto> <src_ip> <src_port> -> <dst_ip> <dst_port> (<options>)
+#   |         |         |         |         |         |          | 
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |--- 
+#   |         |         |         |         |         | sets of key-value
+#   |         |         |         |         |         | pairs like below separated by ";":
+#   |         |         |         |         |         | (msg:"Trojan attack";pps:10;
+#   |         |         |         |         |         | content:0xdeadbeef;)
+#   |         |         |         |         |         |-----same as src_port
+#   |         |         |         |         |---------Same as src_ip
+#   |         |         |         |---------could be one of "1234", "0xfffe",
+#   |         |         |                   "snmp", "$my_port"
+#   |         |         |                   TODO: Range will be supported soon:
+#   |         |         |                         1234-1244
+#   |         |         |----------could be one of the following formats:
+#   |         |                "10.0.0.1", "$HOME_NET", "$EXTERNAL_NET", "any"
+#   |         |--------could be one of "tcp", "udp", "any"
+#   |---------could be one of "alert", "drop"
+#
+# alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"MALWARE-CNC Win.Trojan.ZeroAccess URI and Referer"; flow:to_server,established; urilen:52; content:"/s/?k="; fast_pattern:only; http_header; pcre:"/^\x2f[a-z0-9]{51}$/Ui"; pcre:"/Referer\x3a\s*?http\x3a\x2f{2}[a-z0-9\x2e\x2d]+\x2fs\x2f\x3fk\x3d/Hi"; metadata:policy balanced-ips drop, policy security-ips drop, ruleset community, service http; classtype:trojan-activity; sid:25224; rev:2;)
+# Prints "Traffic spike detected" every time flow 10.0.0.1 -> 10.0.0.2 exceeds 10 pps
+drop icmp 10.0.0.2 any -> 10.0.0.3 any (msg:"This is h2->h3";pps:10;reinstate:"true";) 
+drop icmp 10.0.0.1 any -> 10.0.0.3 any (msg:"This is h1->h3";)
+drop icmp 10.0.0.3 any -> 10.0.0.4 any (msg:"This is h3->h4"; pps:1000;) 
+# Catch all rule for trapping spikes in traffic
+alert any any any -> any any (msg:"I see a lot of traffic"; pps:50;) 

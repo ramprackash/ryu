@@ -121,13 +121,17 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         #where the rules contain options with (content:"0xba 0xad 0xca 0xfe";)
         #print("Pkt IN : %s" % str(pkt))
 
+        #Ignore LLDP as it is used by the topology discovery module
+        eth = pkt.get_protocols(ethernet.ethernet)[0]
+        if eth.ethertype == ether.ETH_TYPE_LLDP:
+            return
+
         header_list = dict((p.protocol_name, p) 
                 for p in pkt.protocols if type(p) != str)
 
         if ARP in header_list:
             src_ip = header_list[ARP].src_ip
             self.ip_to_port[dpid][src_ip] = in_port
-            eth = pkt.get_protocols(ethernet.ethernet)[0]
             dst = eth.dst
             src = eth.src
             self.mac_to_port[dpid][src] = in_port
@@ -149,7 +153,6 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
         elif IPV4 in header_list:
             drop_flag = False
-            eth = pkt.get_protocols(ethernet.ethernet)[0]
             dst = eth.dst
             src = eth.src
             proto = "any"
