@@ -101,7 +101,7 @@ class Rule:
                 pattern = str(self.options["content"])
                 searchresult = re.search(pattern[1:len(pattern)-1], str(pkt_data)) 
                 if searchresult != None:
-                    #print "MATCH MATCH MATCH pkt contents: %s does not match %s (%s)" % (str(pkt_data), pattern[1:len(pattern)-1], searchresult)
+                    #print "MATCH MATCH MATCH pkt contents: %s matches %s (%s)" % (str(pkt_data), pattern[1:len(pattern)-1], searchresult)
                     #print "\n"
                     pkt_match = 1
                 else:
@@ -229,6 +229,7 @@ class SnortParser:
         reinstate_flag = False
         result = self.getMatch(proto, src_ip, src_port, dst_ip, dst_port, pps,
                 pkt_data)
+	#print ">>>>>> "+str(result)
         if (result != None):
             if "alert" in result: 
                 # Can hook into email option here too for alerts
