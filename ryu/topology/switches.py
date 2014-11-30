@@ -673,9 +673,9 @@ class Switches(app_manager.RyuApp):
         # TODO:XXX
         if dp.ofproto.OFP_VERSION == ofproto_v1_0.OFP_VERSION:
             dp.send_packet_out(buffer_id, msg.in_port, [])
-        else:
-            LOG.error('cannot drop_packet. unsupported version. %x',
-                      dp.ofproto.OFP_VERSION)
+        #else:
+        #    LOG.error('cannot drop_packet. unsupported version. %x',
+        #              dp.ofproto.OFP_VERSION)
 
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def packet_in_handler(self, ev):
