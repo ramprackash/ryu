@@ -20,6 +20,7 @@ from ryu.lib.packet import udp
 from ryu.lib import hub
 from ryu.ofproto import ether
 from ryu.ofproto import inet
+from ryu.lib import ofctl_v1_3
 
 import sys
 import ids_state_machine
@@ -76,6 +77,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             if not dp.id in self.datapaths:
                 self.logger.debug('register datapath: %016x', dp.id)
                 self.datapaths[dp.id] = datapath.IDSDatapath(dp)
+                self.logger.debug('Removing all flows from dp: %016', dp.id)
+                ofctl_v1_3.mod_flow_entry(dp, {}, dp.ofproto.OFPFC_DELETE)
             elif ev.state == DEAD_DISPATCHER:
                 if dp.id in self.datapaths:
                     self.logger.debug('unregister datapath: %016x', dp.id)
