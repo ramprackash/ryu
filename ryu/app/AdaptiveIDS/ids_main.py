@@ -120,22 +120,14 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         #TODO: Check if str(pkt) can be used for content based inspections viz.:
         #where the rules contain options with (content:"0xba 0xad 0xca 0xfe";)
         #print("Pkt IN : %s" % str(pkt))
-	
+
         #Ignore LLDP as it is used by the topology discovery module
         eth = pkt.get_protocols(ethernet.ethernet)[0]
         if eth.ethertype == ether.ETH_TYPE_LLDP:
             return
 
-        #header_list = dict((p.protocol_name, p) 
-        #        for p in pkt.protocols if type(p) != str)
-	header_list = {}
-	pkt_data = None
-	for p in pkt.protocols:
-	    if type(p) != str:
-		header_list[p.protocol_name] = p
-	    else :
-		pkt_data = p
-	#print pkt_data
+        header_list = dict((p.protocol_name, p) 
+                for p in pkt.protocols if type(p) != str)
 
         if ARP in header_list:
             src_ip = header_list[ARP].src_ip
@@ -190,7 +182,9 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             #    proto, src_ip, sport, dst_ip, dport))
             result = self.datapaths[datapath.id].fsm.inspect_packets(datapath, in_port, out_port,
                     proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
-                    dst_port=dport, pkt_data=pkt_data)
+                    dst_port=dport, pkt_data=pkt)
+            sport = "any"
+            dport = "any"
             if (result != None):
                 if "drop" in result:
                     drop_flag = True
