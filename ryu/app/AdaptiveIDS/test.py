@@ -19,7 +19,6 @@ class SingleSwitchTopo(Topo):
                 self.addLink(host, switch)
 
 def verifyAlerts(alerts):
-	#./alert_output
         with open('alert_output') as fp:
            match={}
            for rule in alerts:
@@ -31,12 +30,27 @@ def verifyAlerts(alerts):
                        break
            for rule in alerts:
                if match[rule] == False:
-                     print "ERROR!!!! Match not found for "+rule
+                     print "ERROR!!!! Alert Match not found for "+rule
                #else:
                 #     print "Match found for " + rule   
 
-#def verifyFlows(flows):
+def verifyFlows(flows):
 	#./flow_dump
+        with open('flow_dump') as fp:
+           match={}
+           for rule in flows:
+               match[rule]=False
+           for line in fp:	
+               for rule in flows:
+                  search="nw_src="+flows[rule][0]+",nw_dst="+flows[rule][1]+" actions="+flows[rule][2]	
+                  if line.rstrip('\n').find(search) != -1:
+                       match[rule]=True
+                       break
+           for rule in flows:
+               if match[rule] == False:
+                     print "ERROR!!!! Flow Match not found for "+rule
+               #else:
+                #     print "Match found for " + rule   
 
 def simpleTest():
         "Create and test a simple network"
@@ -71,7 +85,7 @@ def simpleTest():
         print h1.cmd('sleep 3')
 	alerts[rule]="\"Malicious tcp data\""
 	flows[rule]=["10.0.0.1","10.0.0.2","output"]
-
+	
 	rule=" alert udp 10.0.0.3 any -> 10.0.0.4 80 (msg:\"Malicious udp data\"; content:\"diablo\";)"
         print rule
 	print h4.cmd('nc -ul 80 &')
@@ -91,14 +105,15 @@ def simpleTest():
 	alerts[rule]="\"I see a lot of traffic\""
 	flows[rule]=["10.0.0.2","10.0.0.4","output"]
 
+	print "====== Flow dump =========="
+	s1.cmdPrint('ovs-ofctl -O OpenFlow13 dump-flows s1 > flow_dump')
+
 	#verify alerts
 	verifyAlerts(alerts)
 
 	#verify flow
-	#verifyFlows(flows)
+	verifyFlows(flows)
 
-	print "====== Flow dump =========="
-	s1.cmdPrint('ovs-ofctl -O OpenFlow13 dump-flows s1 > flow_dump')
 	print "Stopping mininet"
         net.stop()
 
