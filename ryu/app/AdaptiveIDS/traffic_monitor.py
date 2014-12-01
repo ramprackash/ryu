@@ -35,23 +35,28 @@ class TrafficMonitor:
                            key=lambda fl: (fl.match['in_port'],
                            fl.match['ipv4_dst'])):
             sport = dport = proto = "any"
-            if stat.match['ip_proto'] == 6:
-                #sport = stat.match['tcp_src']
-                #dport = stat.match['tcp_dst']
-                proto = "tcp"
-            elif stat.match['ip_proto'] == 17:
-                #sport = stat.match['udp_src']
-                #dport = stat.match['udp_dst']
-                proto = "udp"
-            elif stat.match['ip_proto'] == 1:
-                #sport = dport = "any"
-                proto = "icmp"
+            try:
+                if stat.match['ip_proto'] == 6:
+                    #sport = stat.match['tcp_src']
+                    #dport = stat.match['tcp_dst']
+                    proto = "tcp"
+                elif stat.match['ip_proto'] == 17:
+                    #sport = stat.match['udp_src']
+                    #dport = stat.match['udp_dst']
+                    proto = "udp"
+                elif stat.match['ip_proto'] == 1:
+                    #sport = dport = "any"
+                    proto = "icmp"
+            except:
+                proto = "any"
 
             flow = self.owner.flows.getflow(self.owner.datapath,
                 stat.match['ipv4_src'], stat.match['ipv4_dst'],
                 proto, sport, dport)
             if flow == None:
-                print "Flow not found. How??"
+                print ("Flow not found (for %s:%s:%s:%s:%s). How??" %
+                        (stat.match['ipv4_src'], stat.match['ipv4_dst'], str(proto),
+                        str(sport), str(dport)))
                 continue
 
             delta = stat.packet_count - flow.hitcount

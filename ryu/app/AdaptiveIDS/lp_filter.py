@@ -9,7 +9,7 @@ import random
 import simple_snort_rules
 
 #RULES_DIR
-RULES_DIR = "/home/ubuntu/ryu/ryu/app/AdaptiveIDS/"
+RULES_DIR = "ryu/app/AdaptiveIDS/"
 
 #Switches for Sampling and PortScanning
 PORT_SCANNING = True
@@ -74,7 +74,7 @@ class LPFilter:
                                     dst_ip=dst_ip, dst_port=dst_port,
                                     pkt_data=pkt_data, pps=pps)
             else:
-                print("Packet sampled-out from inspection " + flow_meta_data)
+                #print("Packet sampled-out from inspection " + flow_meta_data)
                 return None
 	else:
             return self.lp_rules.impose(datapath, in_port, out_port,

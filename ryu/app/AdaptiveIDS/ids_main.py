@@ -123,7 +123,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         #TODO: Check if str(pkt) can be used for content based inspections viz.:
         #where the rules contain options with (content:"0xba 0xad 0xca 0xfe";)
         #print("Pkt IN : %s" % str(pkt))
-	
+    
         #Ignore LLDP as it is used by the topology discovery module
         eth = pkt.get_protocols(ethernet.ethernet)[0]
         if eth.ethertype == ether.ETH_TYPE_LLDP:
@@ -131,15 +131,15 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
         #header_list = dict((p.protocol_name, p) 
         #        for p in pkt.protocols if type(p) != str)
-	header_list = {}
-	pkt_data = None
-	for p in pkt.protocols:
-	    if type(p) != str:
-		header_list[p.protocol_name] = p
-	    else :
-		pkt_data = p
-	#print pkt_data
-
+        header_list = {}
+        pkt_data = None
+        for p in pkt.protocols:
+            if type(p) != str:
+                header_list[p.protocol_name] = p
+            else :
+                pkt_data = p
+                #print pkt_data
+    
         if ARP in header_list:
             src_ip = header_list[ARP].src_ip
             self.ip_to_port[dpid][src_ip] = in_port
@@ -150,18 +150,18 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                 out_port = self.mac_to_port[dpid][dst]
             else:
                 out_port = ofproto.OFPP_FLOOD
-
+    
             actions = [parser.OFPActionOutput(out_port)]
-
+    
             data = None
             if msg.buffer_id == ofproto.OFP_NO_BUFFER:
                 data = msg.data
-
+    
             out = parser.OFPPacketOut(datapath=datapath, 
                                       buffer_id=msg.buffer_id,
                                   in_port=in_port, actions=actions, data=data)
             datapath.send_msg(out)
-
+    
         elif IPV4 in header_list:
             drop_flag = False
             dst = eth.dst
@@ -182,11 +182,12 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                 dport = header_list[UDP].dst_port
             if ICMP in header_list:
                 proto="icmp"
+
             if dst_ip in self.ip_to_port[dpid]:
                 out_port = self.ip_to_port[dpid][dst_ip]
             else:
                 out_port = ofproto.OFPP_FLOOD
-
+    
             # Check if this packet hits any light probe rule and take
             # necessary action
             #print ("%d : %d : %s : %s : %s : %s : %s" % (in_port, out_port,
@@ -194,16 +195,17 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             result = self.datapaths[datapath.id].fsm.inspect_packets(datapath, in_port, out_port,
                     proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
                     dst_port=dport, pkt_data=pkt_data)
+            sport = dport = "any"
             if (result != None):
                 if "drop" in result:
                     drop_flag = True
                     actions = ""
                 else:
                     actions = [parser.OFPActionOutput(out_port)]
-
+    
             if drop_flag == False:
                 actions = [parser.OFPActionOutput(out_port)]
-
+    
                 if (out_port != ofproto.OFPP_FLOOD):
                     reinstate_flag = False
                     #key = str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)
@@ -233,25 +235,25 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                         else:
                             matches_rule = False
                         self.datapaths[datapath.id].flows.addflow(datapath, proto, src_ip, 
-                                sport, dst_ip, 
-                                dport, out_port=out_port,
+                                "any", dst_ip, 
+                                "any", out_port=out_port,
                                 matches_rule=matches_rule,
                                 reinstate=reinstate_flag)
                     else:
                         flow_exists = 1
-
+    
                 #Now deal with the incoming packet if there is no flow
                 if flow_exists == 0:
                     data = None
                     if msg.buffer_id == ofproto.OFP_NO_BUFFER:
                         data = msg.data
-
+    
                     out = parser.OFPPacketOut(datapath=datapath, 
                         buffer_id=msg.buffer_id,
                         in_port=in_port, actions=actions, data=data)
                     datapath.send_msg(out)
-
-            
+    
+                
 #if __name__ == "__main__":
 #    ids_main = IDSMain()
 #    ids_main.start_processing()
