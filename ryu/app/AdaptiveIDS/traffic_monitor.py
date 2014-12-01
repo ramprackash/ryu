@@ -8,6 +8,9 @@ Created on Oct 16, 2014
 import random
 from ryu.ofproto import inet
 
+#Enable logging
+LOGGING = True
+
 class bcolors:
     HEADER = '\033[95m'
     OKBLUE = '\033[94m'
@@ -23,14 +26,30 @@ class TrafficMonitor:
     
     def process_flow_stats(self, ev):
         body = ev.msg.body
+        if LOGGING:
+            log_file = open("./ryu/app/AdaptiveIDS/tmlogs.txt","a")        
+
         print ' '
         print(bcolors.OKBLUE + 'Flows In Datapath ' + bcolors.ENDC + '%016x%s' % (ev.msg.datapath.id, self.owner.fsm.get_state()))
+        if LOGGING:
+            log_file.write(" ")
+            log_file.write(bcolors.OKBLUE + '\nFlows In Datapath ' + bcolors.ENDC + '%016x%s' % (ev.msg.datapath.id, self.owner.fsm.get_state_abs()))
+
 
         print(bcolors.OKBLUE + 'in-port      ipv4-src          ipv4-dst     '
                          'out-port  packets   bytes   pps (over last 10s)')
+        if LOGGING:
+            log_file.write(bcolors.OKBLUE + '\nin-port      ipv4-src          ipv4-dst     '
+                         'out-port  packets   bytes   pps (over last 10s)')
+
         print('-------- ----------------- ---------------- '
                          '--------  -------  -------  -------------------' 
                          + bcolors.ENDC)
+        if LOGGING:
+            log_file.write('\n-------- ----------------- ---------------- '
+                         '--------  -------  -------  -------------------' 
+                         + bcolors.ENDC)
+
         for stat in sorted([fl for fl in body if fl.priority == 32768],
                            key=lambda fl: (fl.match['in_port'],
                            fl.match['ipv4_dst'])):
@@ -55,6 +74,10 @@ class TrafficMonitor:
                 proto, sport, dport)
             if flow == None:
                 print ("Flow not found (for %s:%s:%s:%s:%s). How??" %
+                        (stat.match['ipv4_src'], stat.match['ipv4_dst'], str(proto),
+                        str(sport), str(dport)))
+                if LOGGING:
+                    log_file.write("\nFlow not found (for %s:%s:%s:%s:%s). How??" %
                         (stat.match['ipv4_src'], stat.match['ipv4_dst'], str(proto),
                         str(sport), str(dport)))
                 continue
@@ -98,6 +121,16 @@ class TrafficMonitor:
                     '{:^8d}'.format(stat.packet_count), 
                     '{:^8d}'.format(stat.byte_count), 
                     '{:^19d}'.format(flow.avgpkts)))
+                if LOGGING:
+                    log_file.write('\n%8s %17s %17s %8s %8s %8s %4s' %(
+                    '{:^8x}'.format(stat.match['in_port']), 
+                    '{:^17s}'.format(stat.match['ipv4_src']), 
+                    '{:^17s}'.format(stat.match['ipv4_dst']),
+                    '{:^8d}'.format(stat.instructions[0].actions[0].port),
+                    '{:^8d}'.format(stat.packet_count), 
+                    '{:^8d}'.format(stat.byte_count), 
+                    '{:^19d}'.format(flow.avgpkts)))
+
             else:
                 print('%8s %17s %17s %8s %8s %8s %4s' %(
                     '{:^8x}'.format(stat.match['in_port']), 
@@ -107,9 +140,23 @@ class TrafficMonitor:
                     '{:^8d}'.format(stat.packet_count), 
                     '{:^8d}'.format(stat.byte_count), 
                     '{:^19d}'.format(flow.avgpkts)))
+                if LOGGING:
+                    log_file.write('\n%8s %17s %17s %8s %8s %8s %4s' %(
+                    '{:^8x}'.format(stat.match['in_port']), 
+                    '{:^17s}'.format(stat.match['ipv4_src']),
+                    '{:^17s}'.format(stat.match['ipv4_dst']),
+                    bcolors.FAIL + " drop   " + bcolors.ENDC,
+                    '{:^8d}'.format(stat.packet_count), 
+                    '{:^8d}'.format(stat.byte_count), 
+                    '{:^19d}'.format(flow.avgpkts)))
+
 
             if flow.avgpkts <= flow.triggerPPS:
                 print("Going back to Light Probe as spike ended %d < %d" % 
                         (flow.avgpkts, flow.triggerPPS))
+                if LOGGING:
+                    log_file.write("\nGoing back to Light Probe as spike ended %d < %d" % 
+                        (flow.avgpkts, flow.triggerPPS))
                 self.owner.flows.delflow(flow)
                 self.owner.fsm.enforce_light_probing()
+        log_file.close()

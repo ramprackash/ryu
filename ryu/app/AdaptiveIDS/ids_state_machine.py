@@ -69,6 +69,12 @@ class IDSStateMachine:
             return bcolors.OKGREEN + "(L)" + bcolors.ENDC
         else:
             return bcolors.FAIL + "(D)" + bcolors.ENDC
+
+    def get_state_abs(self):
+        if self.state.__name__() == "LPFilter":
+            return "(L)"
+        else:
+            return "(D)"
             
             
     def process_timer_expiry(self):

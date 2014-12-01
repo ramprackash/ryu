@@ -88,6 +88,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
     def _monitor(self):
         while True:
+            log_file = open("./ryu/app/AdaptiveIDS/tmlogs.txt", "w")
+            log_file.close()
             for dp in self.datapaths.values():
                 self._request_stats(dp.datapath)
             hub.sleep(10)
