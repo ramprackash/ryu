@@ -46,6 +46,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.ip_to_port = {}
         self.mac_to_port = {}
         self.datapaths = {}
+	f = open('/home/ubuntu/ryu_Project/ryu/app/AdaptiveIDS/alert_output', 'w')
+	f.write('')
         #self.set_paths = {}
         #self.flows = flows.Flows(self)
         #self.lp_rules = simple_snort_rules.SnortParser(self, 

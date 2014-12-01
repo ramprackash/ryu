@@ -233,6 +233,8 @@ class SnortParser:
         if (result != None):
             if "alert" in result: 
                 # Can hook into email option here too for alerts
+		f = open('/home/ubuntu/ryu_Project/ryu/app/AdaptiveIDS/alert_output', 'a')
+		f.write(result[1]+"\n")
                 print(bcolors.WARNING + "!! ALERT : %s !!" % result[1] + bcolors.ENDC)
             if "drop" in result:
                 drop_flag = True
