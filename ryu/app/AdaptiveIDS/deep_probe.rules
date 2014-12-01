@@ -3113,4 +3113,32 @@ alert any any any -> any any (msg:"I see a lot of traffic"; pps:1000;)
 #alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"MALWARE-CNC Win.Trojan.Zemot outbound connection attempt"; flow:to_server,established; content:"/b/shoe/"; fast_pattern:only; http_uri; content:"Connection|3A 20|Close|0D 0A|"; http_header; content:"Cache-Control|3A 20|no-cache|0D 0A|"; http_header; content:!"Referer"; http_header; pcre:"/\x2fb\x2fshoe\x2f[0-9]{3,5}$/U"; metadata:impact_flag red, policy balanced-ips drop, policy security-ips drop, ruleset community, service http; reference:url,www.virustotal.com/en/file/8ba8292eaa47967618c2376afe524736f4fa7eec15ed9cca17abfca692d26fe4/analysis/; classtype:trojan-activity; sid:32073; rev:1;)
 #alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"MALWARE-CNC Win.Trojan.Zemot payload download attempt"; flow:to_server,established; content:"/mod_articles-auth-"; depth:19; fast_pattern; http_uri; content:"/jquery/"; within:8; distance:7; http_uri; content:"Accept: */*|0D 0A|Connection|3A 20|Close|0D 0A|"; http_header; content:"Cache-Control|3A 20|no-cache|0D 0A|"; http_header; content:!"Referer"; http_header; metadata:impact_flag red, policy balanced-ips drop, policy security-ips drop, ruleset community, service http; reference:url,www.virustotal.com/en/file/8ba8292eaa47967618c2376afe524736f4fa7eec15ed9cca17abfca692d26fe4/analysis/; classtype:trojan-activity; sid:32074; rev:1;)
 #alert tcp $HOME_NET any -> $EXTERNAL_NET $HTTP_PORTS (msg:"MALWARE-CNC Win.Trojan.Bancos variant outbound connection attempt"; flow:to_server,established; content:"/beta/order.php"; fast_pattern:only; http_uri; content:" HTTP/1.1|0D 0A|Content-Type: application/x-www-form-urlencoded|0D 0A|User-Agent: Mozilla/"; content:"|3B 20|MSIE|20|"; distance:0; http_header; content:"|29 0D 0A|Host:"; distance:0; http_header; content:!"Accept"; http_header; content:!"|0D 0A|Referer:"; http_header; metadata:impact_flag red, policy balanced-ips drop, policy security-ips drop, ruleset community, service http; reference:url,www.virustotal.com/en/file/51540d7c9a4bc2a430bc50c85cf9cec5c6f2bb755e800a3f3575ba34fe5f008c/analysis; classtype:trojan-activity; sid:32130; rev:1;)
+# The syntax for rules follows the syntax for snort rules (www.snort.org) 
+# <action> <proto> <src_ip> <src_port> -> <dst_ip> <dst_port> (<options>)
+#   |         |         |         |         |         |          | 
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |
+#   |         |         |         |         |         |          |--- 
+#   |         |         |         |         |         | sets of key-value
+#   |         |         |         |         |         | pairs like below separated by ";":
+#   |         |         |         |         |         | (msg:"Trojan attack";pps:10;
+#   |         |         |         |         |         | content:0xdeadbeef;)
+#   |         |         |         |         |         |-----same as src_port
+#   |         |         |         |         |---------Same as src_ip
+#   |         |         |         |---------could be one of "1234", "0xfffe",
+#   |         |         |                   "snmp", "$my_port"
+#   |         |         |                   TODO: Range will be supported soon:
+#   |         |         |                         1234-1244
+#   |         |         |----------could be one of the following formats:
+#   |         |                "10.0.0.1", "$HOME_NET", "$EXTERNAL_NET", "any"
+#   |         |--------could be one of "tcp", "udp", "icmp", "any"
+#   |---------could be one of "alert", "drop"
 #
+alert tcp 10.0.0.1 any -> 10.0.0.2 80 (msg:"Malicious tcp data"; content:"diablo";)
+alert udp 10.0.0.3 any -> 10.0.0.4 80 (msg:"Malicious udp data"; content:"diablo";)
+drop icmp 10.0.0.2 any -> 10.0.0.3 any (reinstate:"true";)  
+# Catch all rule for trapping spikes in traffic
+alert any any any -> any any (msg:"I see a lot of traffic"; pps:80;) 
