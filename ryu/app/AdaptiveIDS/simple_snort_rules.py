@@ -87,6 +87,8 @@ class Rule:
                 (self.dst_port == "any"):
             dport_match = 1
         if "pps" in self.options:
+      	    #print "actual pps "+str(pps)
+	    #print "rule pps "+str(self.options["pps"])
             if ((int(self.options["pps"]) != -1 and \
                 pps >= int(self.options["pps"])) or \
                     (int(self.options["pps"])== -1)):
