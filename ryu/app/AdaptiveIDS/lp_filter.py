@@ -40,6 +40,7 @@ class PortScanDetector:
 
 class LPFilter:
     def __init__(self, owner):
+        self.owner = owner
         self.lp_rules = simple_snort_rules.SnortParser(owner,
                                            rule_file=RULES_DIR + "light_probe.rules")
         self.ps_detector = PortScanDetector()
@@ -48,13 +49,24 @@ class LPFilter:
     
     def __name__(self):
         return 'LPFilter'
+
+    def get_ids_main_obj(self):
+        # self.owner = fsm
+        # fsm.owner  = datapath
+        # datapath.owner = ids_main
+        return self.owner.owner
     
     def inspect_packets(self, datapath, in_port, out_port, proto="any",
                         src_ip="any", src_port="any", dst_ip="any", 
                         dst_port="any", pps=-1, pkt_data=None):
         if PORT_SCANNING:
-            if( dst_port < 10000 and self.ps_detector.port_scan_detected(proto, src_ip, dst_ip, dst_port)):
-                print("\n############# PORT SCAN DETECTED ---- srcip" + str(src_ip) + " dst_ip "+ str(dst_ip)+" dst-port " + str(dst_port))
+            if( dst_port < 10000 and self.ps_detector.port_scan_detected(proto,
+                    src_ip, dst_ip, dst_port)):
+                main_obj = self.get_ids_main_obj()
+                main_obj.rogue_detected(src_ip)
+                print("\n############# PORT SCAN DETECTED ---- srcip" + 
+                        str(src_ip) + " dst_ip "+ str(dst_ip)+" dst-port " + 
+                        str(dst_port))
                 return ["drop"]
 
         if SAMPLING_ENABLE:

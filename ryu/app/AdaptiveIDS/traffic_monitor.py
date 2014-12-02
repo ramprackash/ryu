@@ -52,8 +52,7 @@ class TrafficMonitor:
                          + bcolors.ENDC)
 
         for stat in sorted([fl for fl in body if fl.priority == 32768],
-                           key=lambda fl: (fl.match['in_port'],
-                           fl.match['ipv4_dst'])):
+                           key=lambda fl: (fl.match['ipv4_src'])):
             sport = dport = proto = "any"
             try:
                 if stat.match['ip_proto'] == 6:
@@ -70,8 +69,18 @@ class TrafficMonitor:
             except:
                 proto = "any"
 
+            try:
+                dst = stat.match['ipv4_dst']
+            except:
+                dst = "any"
+
+            try:
+                inport = str(stat.match['in_port'])
+            except:
+                inport = "any"
+
             flow = self.owner.flows.getflow(self.owner.datapath,
-                stat.match['ipv4_src'], stat.match['ipv4_dst'],
+                stat.match['ipv4_src'], dst,
                 proto, sport, dport)
             if flow == None:
                 print ("Flow not found (for %s:%s:%s:%s:%s). How??" %
@@ -102,7 +111,7 @@ class TrafficMonitor:
             else:
                 ip_proto = "any"
 
-            if stat.instructions != []:
+            if stat.instructions != [] and inport != "any":
                 result = self.owner.fsm.inspect_packets(ev.msg.datapath,
                         stat.match['in_port'], 
                         stat.instructions[0].actions[0].port,
@@ -147,9 +156,9 @@ class TrafficMonitor:
 
             else:
                 print('%8s %17s %17s %8s %8s %8s %4s' %(
-                    '{:^8x}'.format(stat.match['in_port']), 
+                    '{:^8s}'.format(inport), 
                     '{:^17s}'.format(stat.match['ipv4_src']),
-                    '{:^17s}'.format(stat.match['ipv4_dst']),
+                    '{:^17s}'.format(dst),
                     bcolors.FAIL + " drop   " + bcolors.ENDC,
                     '{:^8d}'.format(stat.packet_count), 
                     '{:^8d}'.format(stat.byte_count), 
@@ -168,9 +177,9 @@ class TrafficMonitor:
                     log_file.write('<tr><td>%3s%s</td><td>%8s</td><td>%17s</td><td>%17s</td><td>%8s</td><td> %8s</td><td>%8s</td><td>%4s</td></tr>' %(
                     '{:^3x}'.format(ev.msg.datapath.id),
                     self.owner.fsm.get_state_html(),
-                    '{:^8x}'.format(stat.match['in_port']), 
+                    '{:^8s}'.format(inport), 
                     '{:^17s}'.format(stat.match['ipv4_src']),
-                    '{:^17s}'.format(stat.match['ipv4_dst']),
+                    '{:^17s}'.format(dst),
                     '<font color="red"> drop</font>',
                     '{:^8d}'.format(stat.packet_count), 
                     '{:^8d}'.format(stat.byte_count), 

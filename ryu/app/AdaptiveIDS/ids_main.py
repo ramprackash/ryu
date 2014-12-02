@@ -70,6 +70,18 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         while(True):
             self.inspect_traffic()
             time.sleep(10)
+
+    def rogue_detected(self, src):
+        for dpid, idsdp in self.datapaths.iteritems():
+            datapath = idsdp.datapath
+            ofproto  = datapath.ofproto
+            idsdp.drop_this_rogue_ip(src)
+            self.datapaths[dpid].flows.addflow(datapath, "any", src, 
+                                "any", "any", 
+                                "any", out_port="any",
+                                matches_rule=True,
+                                reinstate=False)
+
     
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, 
                                                 DEAD_DISPATCHER])
@@ -78,7 +90,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         if ev.state == MAIN_DISPATCHER:
             if not dp.id in self.datapaths:
                 self.logger.debug('register datapath: %016x', dp.id)
-                self.datapaths[dp.id] = datapath.IDSDatapath(dp)
+                self.datapaths[dp.id] = datapath.IDSDatapath(dp, self)
                 self.logger.debug('Removing all flows from dp: %016', dp.id)
                 ofctl_v1_3.mod_flow_entry(dp, {}, dp.ofproto.OFPFC_DELETE)
             elif ev.state == DEAD_DISPATCHER:

@@ -15,20 +15,45 @@ from ryu.ofproto import inet
 
 class IDSDatapath:
 
-    def __init__(self, datapath):
+    def __init__(self, datapath, owner):
         print "Datapath init for %s" % str(datapath.id)
         self.datapath = datapath
+        self.owner    = owner
         self.flows = flows.Flows(self)
         self.fsm = ids_state_machine.IDSStateMachine(self)
         self.traffic_mon = traffic_monitor.TrafficMonitor(self.fsm, self)
         self.ip_to_port = {}
+
+    def drop_this_rogue_ip(self, src):
+        ofp = self.datapath.ofproto
+        ofp_parser = self.datapath.ofproto_parser
+
+        cookie = cookie_mask = 0
+        table_id = 0
+        idle_timeout = hard_timeout = 0
+        priority = 32768
+        buffer_id = ofp.OFP_NO_BUFFER
+        match = ofp_parser.OFPMatch(eth_type=ether.ETH_TYPE_IP, ipv4_src=src)
+
+        actions = ""
+        inst = [ofp_parser.OFPInstructionActions(ofp.OFPIT_APPLY_ACTIONS,
+                                                 actions)]
+        req = ofp_parser.OFPFlowMod(self.datapath, cookie, cookie_mask,
+                                    table_id, ofp.OFPFC_ADD,
+                                    idle_timeout, hard_timeout,
+                                    priority, buffer_id,
+                                    ofp.OFPP_ANY, ofp.OFPG_ANY,
+                                    ofp.OFPFF_SEND_FLOW_REM,
+                                    match, inst)
+        self.datapath.send_msg(req)
+
 
     def send_ip_flow(self, command, in_port, out_port, proto="any", 
             src_ip="any", src_port="any", dst_ip="any", dst_port="any", 
             drop=False):
         ofp = self.datapath.ofproto
         ofp_parser = self.datapath.ofproto_parser
- 
+
         cookie = cookie_mask = 0
         table_id = 0
         idle_timeout = hard_timeout = 0

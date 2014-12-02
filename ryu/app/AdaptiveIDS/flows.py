@@ -62,7 +62,8 @@ class Flows:
                 dst_port=flow.dport, drop=True)
         del self._flows[key_tuple]
 
-    def getflow(self, dp, sip, dip, proto, sport, dport):
+    def getflow(self, dp="any", sip="any", dip="any", proto="any", sport="any",
+            dport="any"):
         key_tuple = (str(dp.id), str(sip), str(dip), str(proto), str(sport),
                     str(dport))
         if key_tuple not in self._flows.keys():
