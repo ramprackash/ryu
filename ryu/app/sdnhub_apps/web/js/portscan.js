@@ -7,14 +7,14 @@ function updatePortScanReport() {
     }
     var text = "";
     $.get(url.concat("/ids/portscan"), function(resp){
-//          portScanBody.innerHTML = resp;
-        var lines = resp.split("\n");
-        for (line in lines){
-            var new_p = document.createElement('FONT');
-            new_p.appendChild(document.createTextNode(lines[line]));
-            portScanBody.appendChild(new_p);
-            portScanBody.appendChild(document.createElement('BR'));
-        }
+          portScanBody.innerHTML = resp;
+//        var lines = resp.split("\n");
+//        for (line in lines){
+//            var new_p = document.createElement('FONT');
+//            new_p.appendChild(document.createTextNode(lines[line]));
+//            portScanBody.appendChild(new_p);
+//            portScanBody.appendChild(document.createElement('BR'));
+//        }
     });
     
 }

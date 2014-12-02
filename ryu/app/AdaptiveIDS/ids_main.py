@@ -48,6 +48,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.datapaths = {}
 	f = open('ryu/app/AdaptiveIDS/alert_output', 'w')
 	f.write('')
+        self.clean_log_files()
         #self.set_paths = {}
         #self.flows = flows.Flows(self)
         #self.lp_rules = simple_snort_rules.SnortParser(self, 
@@ -70,6 +71,12 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         while(True):
             self.inspect_traffic()
             time.sleep(10)
+
+    def clean_log_files(self):
+        ps_log = open('./ryu/app/AdaptiveIDS/portscan.report', 'w')
+        ps_log.close()
+        tm_log = open("./ryu/app/AdaptiveIDS/tmlogs.txt", "w")
+        tm_log.close()
 
     def rogue_detected(self, src):
         for dpid, idsdp in self.datapaths.iteritems():
@@ -100,8 +107,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
     def _monitor(self):
         while True:
-            log_file = open("./ryu/app/AdaptiveIDS/tmlogs.txt", "w")
-            log_file.close()
+            tm_log = open("./ryu/app/AdaptiveIDS/tmlogs.txt", "w")
+            tm_log.close()
             for dp in self.datapaths.values():
                 self._request_stats(dp.datapath)
             hub.sleep(10)

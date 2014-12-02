@@ -5,6 +5,7 @@ Created on Oct 16, 2014
 '''
 
 import random
+import datetime
 
 import simple_snort_rules
 
@@ -64,9 +65,13 @@ class LPFilter:
                     src_ip, dst_ip, dst_port)):
                 main_obj = self.get_ids_main_obj()
                 main_obj.rogue_detected(src_ip)
-                print("\n############# PORT SCAN DETECTED ---- srcip" + 
-                        str(src_ip) + " dst_ip "+ str(dst_ip)+" dst-port " + 
+                print('[ '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+' ]' +" Port scan detected from  SRC IP: " + 
+                        str(src_ip) + " DST IP: "+ str(dst_ip)+" DST PORT: " + 
                         str(dst_port))
+                port_scan_log = open('./ryu/app/AdaptiveIDS/portscan.report', 'a')
+                port_scan_log.write('<font color="red">[ '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+' ]' +" Port scan detected from  SRC IP: " + 
+                        str(src_ip) + " DST IP: "+ str(dst_ip)+" DST PORT: " + 
+                        str(dst_port)+"</font><br>")
                 return ["drop"]
 
         if SAMPLING_ENABLE:
