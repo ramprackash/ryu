@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>SDN Hub starter kit</title>
+    <title>Adaptive IDS - Rules</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="/web/css/pure-min-0.5.0.css">
@@ -21,8 +21,8 @@
   <div class="header">
       <div id="menu">
       <div class="home-menu pure-menu pure-menu-open pure-menu-horizontal pure-menu-fixed">
-          <img src="/web/img/sdnhub_logo.png" style="height:40px;vertical-align:middle;">
-          <a class="pure-menu-heading" href="">SDN Hub Controller</a>
+          <!--<img src="/web/img/sdnhub_logo.png" style="height:40px;vertical-align:middle;">-->
+          <a class="pure-menu-heading" href="">Adaptive IDS</a>
       </div>
   </div>
   </div>
@@ -31,7 +31,7 @@
   <div id="menu">
       <div class="pure-menu pure-menu-open">
           <ul>
-              <li class="menu-item-divided pure-menu-selected">
+              <li class=" ">
                   <a href="/web/index.html">Topology
                   <i class="fa fa-home"></i></a>
               </li>
@@ -57,19 +57,25 @@
                   <a href="/web/portscan.html">Port Scan Report
                   <i></i></a>
               </li>
-              <li class=" ">
+              <li class="menu-item-divided pure-menu-selected">
                   <a href="/web/idsrules.html">IDS Rules
                   <i></i></a>
               </li>
  </ul>
- </div>
- </div>
+ </div><!-- left bar-->
+ </div><!-- menu-->
 
  <div id="main">
-      <h2>Topology</h2>
-      <div id="paper-container" class="paper"/>
-    </div>
-
+      <h2>Adaptive IDS Rules - Light Probe</h2><!--
+      <button style="float:right;" type="submit" class="pure-button
+                 pure-button-primary" onclick="stopIDSLogsRefresh()">Stop refresh</button>-->
+      <div id="paper-container-ids-rules-lp" class="paper"/>
+      <!--<div id="paper-container-ids"/>-->
+    </div> <!--paper-container-ids-->
+      <h2>Adaptive IDS Rules - Deep Probe</h2>
+      <div id="paper-container-ids-rules-dp" class="paper"/>
+      <!--<div id="paper-container-ids"/>-->
+    </div> <!--paper-container-ids-->
   </div><!-- main -->
   </div><!--layout-->
 
@@ -83,6 +89,6 @@
       <script src="/web/js/joint.all.min.js"></script>
       <script src="/web/js/joint.shapes.erd.js"></script>
       <script src="/web/js/joint.layout.DirectedGraph.js"></script>
-      <script src="/web/js/topology.js"></script>
+      <script src="/web/js/idsrules.js"></script>
   </body>
 </html>

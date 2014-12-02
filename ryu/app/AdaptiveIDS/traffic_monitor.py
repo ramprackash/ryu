@@ -10,6 +10,7 @@ from ryu.ofproto import inet
 
 #Enable logging
 LOGGING = True
+META = False
 
 class bcolors:
     HEADER = '\033[95m'
@@ -31,21 +32,21 @@ class TrafficMonitor:
 
         print ' '
         print(bcolors.OKBLUE + 'Flows In Datapath ' + bcolors.ENDC + '%016x%s' % (ev.msg.datapath.id, self.owner.fsm.get_state()))
-        if LOGGING:
+        if LOGGING and META:
             log_file.write(" ")
             log_file.write(bcolors.OKBLUE + '\nFlows In Datapath ' + bcolors.ENDC + '%016x%s' % (ev.msg.datapath.id, self.owner.fsm.get_state_abs()))
 
 
         print(bcolors.OKBLUE + 'in-port      ipv4-src          ipv4-dst     '
                          'out-port  packets   bytes   pps (over last 10s)')
-        if LOGGING:
+        if LOGGING and META:
             log_file.write(bcolors.OKBLUE + '\nin-port      ipv4-src          ipv4-dst     '
                          'out-port  packets   bytes   pps (over last 10s)')
 
         print('-------- ----------------- ---------------- '
                          '--------  -------  -------  -------------------' 
                          + bcolors.ENDC)
-        if LOGGING:
+        if LOGGING and META:
             log_file.write('\n-------- ----------------- ---------------- '
                          '--------  -------  -------  -------------------' 
                          + bcolors.ENDC)
@@ -76,7 +77,7 @@ class TrafficMonitor:
                 print ("Flow not found (for %s:%s:%s:%s:%s). How??" %
                         (stat.match['ipv4_src'], stat.match['ipv4_dst'], str(proto),
                         str(sport), str(dport)))
-                if LOGGING:
+                if LOGGING and META:
                     log_file.write("\nFlow not found (for %s:%s:%s:%s:%s). How??" %
                         (stat.match['ipv4_src'], stat.match['ipv4_dst'], str(proto),
                         str(sport), str(dport)))
@@ -122,7 +123,19 @@ class TrafficMonitor:
                     '{:^8d}'.format(stat.byte_count), 
                     '{:^19d}'.format(flow.avgpkts)))
                 if LOGGING:
-                    log_file.write('\n%8s %17s %17s %8s %8s %8s %4s' %(
+                    '''
+                    log_file.write('\n%3s %8s %17s %17s %8s %8s %8s %4s' %(
+                    '{:^3x}'.format(ev.msg.datapath.id), 
+                    '{:^8x}'.format(stat.match['in_port']), 
+                    '{:^17s}'.format(stat.match['ipv4_src']), 
+                    '{:^17s}'.format(stat.match['ipv4_dst']),
+                    '{:^8d}'.format(stat.instructions[0].actions[0].port),
+                    '{:^8d}'.format(stat.packet_count), 
+                    '{:^8d}'.format(stat.byte_count), 
+                    '{:^19d}'.format(flow.avgpkts)))'''
+                    log_file.write('<tr><td>%3s%s</td><td>%8s</td><td>%17s</td><td>%17s</td><td>%8s</td><td> %8s</td><td>%8s</td><td>%4s</td></tr>' %(
+                    '{:^3x}'.format(ev.msg.datapath.id),
+                    self.owner.fsm.get_state_html(),
                     '{:^8x}'.format(stat.match['in_port']), 
                     '{:^17s}'.format(stat.match['ipv4_src']), 
                     '{:^17s}'.format(stat.match['ipv4_dst']),
@@ -130,6 +143,7 @@ class TrafficMonitor:
                     '{:^8d}'.format(stat.packet_count), 
                     '{:^8d}'.format(stat.byte_count), 
                     '{:^19d}'.format(flow.avgpkts)))
+
 
             else:
                 print('%8s %17s %17s %8s %8s %8s %4s' %(
@@ -141,11 +155,23 @@ class TrafficMonitor:
                     '{:^8d}'.format(stat.byte_count), 
                     '{:^19d}'.format(flow.avgpkts)))
                 if LOGGING:
-                    log_file.write('\n%8s %17s %17s %8s %8s %8s %4s' %(
+                    '''
+                    log_file.write('\n%3s %8s %17s %17s %8s %8s %8s %4s' %(
+                    '{:^3x}'.format(ev.msg.datapath.id), 
                     '{:^8x}'.format(stat.match['in_port']), 
                     '{:^17s}'.format(stat.match['ipv4_src']),
                     '{:^17s}'.format(stat.match['ipv4_dst']),
                     bcolors.FAIL + " drop   " + bcolors.ENDC,
+                    '{:^8d}'.format(stat.packet_count), 
+                    '{:^8d}'.format(stat.byte_count), 
+                    '{:^19d}'.format(flow.avgpkts)))'''
+                    log_file.write('<tr><td>%3s%s</td><td>%8s</td><td>%17s</td><td>%17s</td><td>%8s</td><td> %8s</td><td>%8s</td><td>%4s</td></tr>' %(
+                    '{:^3x}'.format(ev.msg.datapath.id),
+                    self.owner.fsm.get_state_html(),
+                    '{:^8x}'.format(stat.match['in_port']), 
+                    '{:^17s}'.format(stat.match['ipv4_src']),
+                    '{:^17s}'.format(stat.match['ipv4_dst']),
+                    '<font color="red"> drop</font>',
                     '{:^8d}'.format(stat.packet_count), 
                     '{:^8d}'.format(stat.byte_count), 
                     '{:^19d}'.format(flow.avgpkts)))

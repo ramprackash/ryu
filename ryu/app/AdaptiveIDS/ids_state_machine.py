@@ -75,6 +75,12 @@ class IDSStateMachine:
             return "(L)"
         else:
             return "(D)"
+
+    def get_state_html(self):
+        if self.state.__name__() == "LPFilter":
+            return '<font color="green">(L)</font>'
+        else:
+            return '<font color="red">(D)</font>'
             
             
     def process_timer_expiry(self):
