@@ -101,11 +101,8 @@ def simpleTest():
 	
         rule = "alert any any any -> any any (msg:\"I see a lot of traffic\"; pps:80;) "
         print rule
-<<<<<<< HEAD
-	print h2.cmd('ping -c 1000 -i .01 %s' % h4.IP())
-=======
 	print h2.cmd('ping -c 2000 -i .01 %s' % h4.IP())
->>>>>>> Fixed failing test
+
 	alerts[rule]="\"I see a lot of traffic\""
 	flows[rule]=["10.0.0.2","10.0.0.4","output"]
 
