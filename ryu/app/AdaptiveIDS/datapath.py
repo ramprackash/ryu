@@ -57,7 +57,7 @@ class IDSDatapath:
         cookie = cookie_mask = 0
         table_id = 0
         idle_timeout = hard_timeout = 0
-        priority = 32768
+        priority = 32767
         ip_proto = 0
         buffer_id = ofp.OFP_NO_BUFFER
         if proto == "icmp":
