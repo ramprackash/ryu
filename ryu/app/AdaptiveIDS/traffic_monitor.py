@@ -8,6 +8,9 @@ Created on Oct 16, 2014
 import random
 from ryu.ofproto import inet
 
+import ids_main
+
+
 #Enable logging
 LOGGING = True
 META = False
@@ -38,10 +41,10 @@ class TrafficMonitor:
 
 
         print(bcolors.OKBLUE + 'in-port      ipv4-src          ipv4-dst     '
-                         'out-port  packets   bytes   pps (over last 10s)')
+                         'out-port  packets   bytes   pps (over last %d sec)'%(ids_main.IDSCfgParams.FLOW_STATS_INTERVAL))
         if LOGGING and META:
             log_file.write(bcolors.OKBLUE + '\nin-port      ipv4-src          ipv4-dst     '
-                         'out-port  packets   bytes   pps (over last 10s)')
+                         'out-port  packets   bytes   pps (over last %d ssec)'%(ids_main.IDSCfgParams.FLOW_STATS_INTERVAL))
 
         print('-------- ----------------- ---------------- '
                          '--------  -------  -------  -------------------' 
@@ -96,7 +99,7 @@ class TrafficMonitor:
             delta = stat.packet_count - flow.hitcount
             flow.hitcount = stat.packet_count
 
-            avg_delta = delta / 10
+            avg_delta = delta / ids_main.IDSCfgParams.FLOW_STATS_INTERVAL
             if "ip_proto" in stat.match:
                 if int(stat.match['ip_proto']) == \
                         inet.IPPROTO_ICMP:
