@@ -51,7 +51,8 @@ class TrafficMonitor:
                          '--------  -------  -------  -------------------' 
                          + bcolors.ENDC)
 
-        for stat in sorted([fl for fl in body if fl.priority >= 32760],
+        for stat in sorted([fl for fl in body if (fl.priority >= 32760 and
+                                                  fl.priority != 65535)],
                            key=lambda fl: (fl.match['ipv4_src'])):
             sport = dport = proto = "any"
             try:
