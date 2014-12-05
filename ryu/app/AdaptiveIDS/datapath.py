@@ -24,6 +24,10 @@ class IDSDatapath:
         self.traffic_mon = traffic_monitor.TrafficMonitor(self.fsm, self)
         self.ip_to_port = {}
 
+    """ 
+    Program a drop rule for the specified source IP. Usually this is in
+    response to the portscanner detecting a portscan originating from this IP
+    """
     def drop_this_rogue_ip(self, src):
         ofp = self.datapath.ofproto
         ofp_parser = self.datapath.ofproto_parser
@@ -47,7 +51,10 @@ class IDSDatapath:
                                     match, inst)
         self.datapath.send_msg(req)
 
-
+    """ 
+    Program a L3 Flow in the datapath's OpenFlow Table
+    Arguments are self explanatory
+    """
     def send_ip_flow(self, command, in_port, out_port, proto="any", 
             src_ip="any", src_port="any", dst_ip="any", dst_port="any", 
             drop=False):
@@ -68,9 +75,10 @@ class IDSDatapath:
             ip_proto = inet.IPPROTO_UDP
 
         if (ip_proto != 0):
-            match = ofp_parser.OFPMatch(in_port=in_port,eth_type=ether.ETH_TYPE_IP,
-                                         ipv4_src=src_ip, ipv4_dst=dst_ip,
-                                         ip_proto=ip_proto)
+            match = ofp_parser.OFPMatch(in_port=in_port,
+                    eth_type=ether.ETH_TYPE_IP,
+                    ipv4_src=src_ip, ipv4_dst=dst_ip,
+                    ip_proto=ip_proto)
             #if ip_proto == inet.IPPROTO_TCP and src_port != "any":
             if ip_proto == inet.IPPROTO_TCP:
                 match = ofp_parser.OFPMatch(in_port=in_port, 

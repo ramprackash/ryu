@@ -21,6 +21,9 @@ class PortScanDetector:
         self.packet_logs = {}
         self.packet_logs_keys = self.packet_logs.keys()
     
+    """ Returns TRUE if a portscan from this src_ip is detected. False
+    otherwise
+    """
     def port_scan_detected(self, proto, src_ip, dst_ip, dst_port, scan_window=3):
         port_scan_detected = False
         dest_ports = []
@@ -43,7 +46,7 @@ class LPFilter:
     def __init__(self, owner):
         self.owner = owner
         self.lp_rules = simple_snort_rules.SnortParser(owner,
-                                           rule_file=RULES_DIR + "light_probe.rules")
+                                    rule_file=RULES_DIR + "light_probe.rules")
         self.ps_detector = PortScanDetector()
         self.flows_keeper = {}
         self.flows_keeper_keys = self.flows_keeper.keys()
@@ -52,11 +55,11 @@ class LPFilter:
         return 'LPFilter'
 
     def get_ids_main_obj(self):
-        # self.owner = fsm
-        # fsm.owner  = datapath
-        # datapath.owner = ids_main
         return self.owner.owner
     
+    """ Subject packet to the portscanner and also the light probe rules if 
+    port scanner did not detect anything malicious
+    """
     def inspect_packets(self, datapath, in_port, out_port, proto="any",
                         src_ip="any", src_port="any", dst_ip="any", 
                         dst_port="any", pps=-1, pkt_data=None):

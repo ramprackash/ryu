@@ -6,7 +6,6 @@ import sys, traceback
 import re
 from pyparsing import *
 from traffic_monitor import bcolors
-#from ryu.ofproto import ofproto_v1_3
 
 
 ipAddress = Combine(Word(nums) + ('.' + Word(nums))*3)
@@ -39,6 +38,7 @@ kvp = option_key + Optional(Literal(":")) + \
 rule_option = Literal("(").suppress() + OneOrMore(kvp) + \
                     Literal(")").suppress()
 
+""" Represents a single rule in the rules file """
 class Rule:
     def __init__(self, action, proto, src_ip, dst_ip, src_port, dst_port,
             in_options):
@@ -62,6 +62,9 @@ class Rule:
             else:
                 i = i+1
 
+    """
+    Checks if the given data matches "this" rule
+    """
     def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any",
             dst_port="any", pps=-1, pkt_data=None):
 
@@ -103,21 +106,11 @@ class Rule:
                 pattern = str(self.options["content"])
                 searchresult = re.search(pattern[1:len(pattern)-1], str(pkt_data)) 
                 if searchresult != None:
-                    #print "MATCH MATCH MATCH pkt contents: %s matches %s (%s)" % (str(pkt_data), pattern[1:len(pattern)-1], searchresult)
-                    #print "\n"
                     pkt_match = 1
                 else:
-                    #print "Incoming pkt contents: %s does not match %s %s" % (str(pkt_data), pattern[1:len(pattern)-1], searchresult) 
-                    #print "\n"
                     pkt_match = 0
         else:
             pkt_match = 1
-
-        #if pkt_match == 1:
-        #    print("To match %s:%s:%s:%s:%s" % (proto, src_ip, src_port, 
-        #          dst_ip, dst_port))
-        #    print("In Rule: %s:%s:%s:%s:%s" % (self.proto, self.src_ip,
-        #          self.src_port, self.dst_ip, self.dst_port))
 
         if (prot_match == sip_match == sport_match == dip_match == \
                 dport_match == pps_match == pkt_match == 1):
@@ -201,12 +194,6 @@ class SnortParser:
             rule.dumpOption(key="msg")
             index = index + 1
 
-    def getRules(self):
-        """ 
-        " API for IDS application to get the rules configured int the system
-        """
-        # TODO
-
     def getMatch(self, proto="any", src_ip="any", src_port="any", dst_ip="any",
             dst_port="any", pps=-1, pkt_data=None):
         index = 0
@@ -223,6 +210,9 @@ class SnortParser:
     """ 
     " Programs only drop flows if required. The caller needs to take necessary
     " action for all other cases
+    " Returns a list if a match is found, else None
+    " The list could be [ "alert", "this is h1->h3", "reinstate" ] or ["drop"]
+    " etc. based on the rule format
     """
     def impose(self, datapath, in_port, out_port, proto="any", src_ip="any", 
             src_port="any", dst_ip="any", dst_port="any", pps=-1, pkt_data=None):
