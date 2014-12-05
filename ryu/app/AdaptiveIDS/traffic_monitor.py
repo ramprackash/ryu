@@ -196,3 +196,4 @@ class TrafficMonitor:
                 self.owner.flows.delflow(flow)
                 self.owner.fsm.enforce_light_probing()
         log_file.close()
+

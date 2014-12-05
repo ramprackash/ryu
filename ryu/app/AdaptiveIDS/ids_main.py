@@ -27,6 +27,7 @@ import ids_state_machine
 import traffic_monitor
 import simple_snort_rules
 import datapath
+import ids_cfg_loader
 
 import time
 
@@ -40,6 +41,14 @@ ICMP = icmp.icmp.__name__
 TCP = tcp.tcp.__name__
 UDP = udp.udp.__name__
 
+class IDSCfgParams:
+    FSM_TIMER = 300
+    LP_RULES_FILE = './ryu/app/AdaptiveIDS/light_probe.rules'
+    DP_RULES_FILE = './ryu/app/AdaptiveIDS/deep_probe.rules'
+    FLOW_STATS_INTERVAL = 10
+    LP_SAMPLING_RATIO = 8
+    PORT_SCAN_WINDOW = 3
+
 class IDSMain(simple_switch_13.SimpleSwitch13):
     def __init__(self, *args, **kwargs):
         super(IDSMain, self).__init__(*args, **kwargs)
@@ -48,6 +57,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.datapaths = {}
 	f = open('ryu/app/AdaptiveIDS/alert_output', 'w')
 	f.write('')
+        self.fetch_ids_cfg_params()
         self.clean_log_files()
         #self.set_paths = {}
         #self.flows = flows.Flows(self)
@@ -64,6 +74,35 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         #self.traffic_mon = traffic_monitor.TrafficMonitor(self.fsm,
         #        self)
     
+    def fetch_ids_cfg_params(self):
+        cfg_parser = ids_cfg_loader.IDSCfgLoader('./ryu/app/AdaptiveIDS/ids.cfg')
+        if not cfg_parser.load_all_cfg_params():
+            print('!!!IDS CONFIG FILE PARSING FAILED!!!')     
+            print('!!!USING IDS DEFAULT VALUES!!!')
+        else:
+            print('IDS Config Parsing Successful!!!')
+            cfg_values = cfg_parser.get_all_cfg_params()
+            try:
+                IDSCfgParams.FSM_TIMER = cfg_values['fsm_timer']
+                IDSCfgParams.LP_RULES_FILE = cfg_values['lp_rules_file']
+                IDSCfgParams.DP_RULES_FILE = cfg_values['dp_rules_file']
+                IDSCfgParams.FLOW_STATS_INTERVAL = cfg_values['flow_stats_interval']
+                IDSCfgParams.LP_SAMPLING_RATIO = cfg_values['lp_sampling_ratio']
+                IDSCfgParams.PORT_SCAN_WINDOW = cfg_values['port_scan_window']
+            except (KeyError):
+                print('Key Error in hash returned by ids_cfg_loader.IDSCfgLoader.get_all_cfg_params()')
+            except:
+                print('Exception in IDSMain.fetch_ids_cfg_params')
+        self.print_ids_cfg_params()
+
+    def print_ids_cfg_params(self):
+        print('FSM Timer: %d ' %(IDSCfgParams.FSM_TIMER))
+        print('LP rules file: %s' %(IDSCfgParams.LP_RULES_FILE))
+        print('DP rules file: %s' %(IDSCfgParams.DP_RULES_FILE))
+        print('Flow stats interval: %d' %(IDSCfgParams.FLOW_STATS_INTERVAL))
+        print('LP sampling ratio %d' %(IDSCfgParams.LP_SAMPLING_RATIO))
+        print('Port Scan Window %d' %(IDSCfgParams.PORT_SCAN_WINDOW))
+     
     def inspect_traffic(self):
         self.traffic_mon.process_flow_stats()
     
@@ -111,7 +150,7 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             tm_log.close()
             for dp in self.datapaths.values():
                 self._request_stats(dp.datapath)
-            hub.sleep(10)
+            hub.sleep(IDSCfgParams.FLOW_STATS_INTERVAL)
     
     def _request_stats(self, datapath):
         #self.logger.debug('send stats request: %016x', datapath.id)

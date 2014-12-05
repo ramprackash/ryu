@@ -5,6 +5,7 @@ Created on Oct 16, 2014
 '''
 import dp_filter
 import lp_filter
+import ids_main
 
 import threading
 import time
@@ -12,13 +13,14 @@ import time
 from traffic_monitor import bcolors
 
 class IDSTimer(threading.Thread):
-    def __init__(self, statemachine):
+    def __init__(self, statemachine, time_out=300):
         threading.Thread.__init__(self)
         self.start_time = time.time()
         self.state_machine = statemachine
+        self.time_out = time_out
     
     def run(self):
-        while time.time() - self.start_time < 300:
+        while time.time() - self.start_time < self.time_out:
             time.sleep(1)
         print('IDS Timer expired')
         self.state_machine.process_timer_expiry()
@@ -28,8 +30,8 @@ class IDSTimer(threading.Thread):
 
 class IDSStateMachine:
     def __init__(self, owner):
-        self.lp_filter = lp_filter.LPFilter(owner)
-        self.dp_filter = dp_filter.DPFilter(owner)
+        self.lp_filter = lp_filter.LPFilter(owner, rules=ids_main.IDSCfgParams.LP_RULES_FILE)
+        self.dp_filter = dp_filter.DPFilter(owner, rules=ids_main.IDSCfgParams.DP_RULES_FILE)
         self.ids_timer = None
         self.owner = owner
         self.enforce_light_probing()
@@ -38,8 +40,9 @@ class IDSStateMachine:
         self.state = self.dp_filter
         #self.print_state()
         if self.ids_timer == None:
-            self.ids_timer = IDSTimer(self)
+            self.ids_timer = IDSTimer(statemachine=self,time_out=ids_main.IDSCfgParams.FSM_TIMER)
             self.ids_timer.start()
+            #print('Starting timer with time_out: ' + str(ids_main.IDSCfgParams.FSM_TIMER))
         else:
             self.ids_timer.update_start_time()
     
