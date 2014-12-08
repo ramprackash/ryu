@@ -77,7 +77,7 @@ def simpleTest():
 
 	rule="alert any 10.0.0.1 any -> 10.0.0.3 any (msg:\"This is h1->h3\";)"
 	print rule
-	print h1.cmd('ping -c 1 -i .1 %s' % h3.IP())
+	print h1.cmd('ping -c 2000 -i .01 %s' % h3.IP())
 	alerts[rule]="\"This is h1->h3\""
 	flows[rule]=["10.0.0.1","10.0.0.3","output"]
 

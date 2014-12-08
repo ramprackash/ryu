@@ -45,7 +45,7 @@ drop icmp 10.0.0.2 any -> 10.0.0.3 any (reinstate:"true";)
 alert any any any -> any any (msg:"I see a lot of traffic"; pps:80;) 
 
 
-alert any 10.0.0.1 any -> 10.0.0.2 80 (msg:"Malicious HTTP req"; content:"diablo";)
+#alert any 10.0.0.1 any -> 10.0.0.2 80 (msg:"Malicious HTTP req"; content:"diablo";)
 # alert tcp $HOME_NET 2589 -> $EXTERNAL_NET any (msg:"MALWARE-BACKDOOR - Dagger_1.4.0"; flow:to_client,established; content:"2|00 00 00 06 00 00 00|Drives|24 00|"; depth:16; metadata:ruleset community; classtype:misc-activity; sid:105; rev:14;)
 #alert tcp any any -> any 7597 (msg:"MALWARE-BACKDOOR QAZ Worm Client Login access"; flow:to_server,established; content:"qazwsx.hsq"; metadata:ruleset community; reference:mcafee,98775; classtype:misc-activity; sid:108; rev:11;)
 #alert any any any -> any any (msg:"I see a lot of traffic"; pps:1000;) 

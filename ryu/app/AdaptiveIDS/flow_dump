@@ -1,3 +1,9 @@
 OFPST_FLOW reply (OF1.3) (xid=0x2):
- cookie=0x0, duration=61.540s, table=0, n_packets=2049, n_bytes=199485, priority=0 actions=CONTROLLER:65535
- cookie=0x0, duration=61.539s, table=0, n_packets=0, n_bytes=0, priority=65535,dl_dst=01:80:c2:00:00:0e,dl_type=0x88cc actions=CONTROLLER:65535
+ cookie=0x0, duration=60.690s, table=0, n_packets=1983, n_bytes=194334, send_flow_rem priority=32767,icmp,in_port=2,nw_src=10.0.0.3,nw_dst=10.0.0.1 actions=output:1,CONTROLLER:65509
+ cookie=0x0, duration=60.697s, table=0, n_packets=1991, n_bytes=195118, send_flow_rem priority=32767,icmp,in_port=1,nw_src=10.0.0.1,nw_dst=10.0.0.3 actions=output:2,CONTROLLER:65509
+ cookie=0x0, duration=22.237s, table=0, n_packets=1978, n_bytes=193844, send_flow_rem priority=32767,icmp,in_port=4,nw_src=10.0.0.4,nw_dst=10.0.0.2 actions=output:3,CONTROLLER:65509
+ cookie=0x0, duration=35.641s, table=0, n_packets=0, n_bytes=0, send_flow_rem priority=32767,udp,in_port=2,nw_src=10.0.0.3,nw_dst=10.0.0.4 actions=output:4,CONTROLLER:65509
+ cookie=0x0, duration=32.377s, table=0, n_packets=0, n_bytes=0, send_flow_rem priority=32767,icmp,in_port=3,nw_src=10.0.0.2,nw_dst=10.0.0.3 actions=drop
+ cookie=0x0, duration=38.721s, table=0, n_packets=4, n_bytes=273, send_flow_rem priority=32767,tcp,in_port=1,nw_src=10.0.0.1,nw_dst=10.0.0.2 actions=output:3,CONTROLLER:65509
+ cookie=0x0, duration=38.712s, table=0, n_packets=2, n_bytes=132, send_flow_rem priority=32767,tcp,in_port=3,nw_src=10.0.0.2,nw_dst=10.0.0.1 actions=output:1,CONTROLLER:65509
+ cookie=0x0, duration=22.335s, table=0, n_packets=1988, n_bytes=194824, send_flow_rem priority=32767,icmp,in_port=3,nw_src=10.0.0.2,nw_dst=10.0.0.4 actions=output:4,CONTROLLER:65509
