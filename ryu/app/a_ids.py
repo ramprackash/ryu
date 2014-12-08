@@ -106,6 +106,16 @@ class AdIDSController(ControllerBase):
             resp_body = resp_body + r_line
         return Response(content_type='text', body=resp_body)
 
+    def get_lightperf(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        #resp_file = open("./ryu/app/AdaptiveIDS/ids_hits.alerts","r")
+ 
+        #r_lines = resp_file.readlines()	
+        #resp_body = ''
+        #for r_line in r_lines:
+       #     resp_body = resp_body + r_line
+        return Response(content_type='text', body='')
+
 
 class RestIDSApi(app_manager.RyuApp):
     _CONTEXTS = {
@@ -139,6 +149,10 @@ class RestIDSApi(app_manager.RyuApp):
         uri = path + '/dprules'
         mapper.connect('ids', uri,
                        controller=AdIDSController, action='get_dp_rules',
+                       conditions=dict(method=['GET']))
+        uri = path + '/lightperf'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_lightperf',
                        conditions=dict(method=['GET']))
 
 

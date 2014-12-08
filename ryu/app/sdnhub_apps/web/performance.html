@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Adaptive IDS - Alerts</title>
+    <title>Adaptive IDS - Performance</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="/web/css/pure-min-0.5.0.css">
@@ -53,7 +53,7 @@
                   <a href="/web/adaptiveids.html">Adaptive IDS
                   <i></i></a>
               </li>
-              <li class="menu-item-divided pure-menu-selected">
+              <li class=" ">
                   <a href="/web/idsalerts.html">Alerts
                   <i></i></a>
               </li>
@@ -61,7 +61,7 @@
                   <a href="/web/portscan.html">Port Scan Report
                   <i></i></a>
               </li>
-              <li class=" ">
+              <li class="menu-item-divided pure-menu-selected">
                   <a href="/web/performance.html">Performance
                   <i></i></a>
               </li>
@@ -74,10 +74,14 @@
  </div><!-- menu-->
 
  <div id="main">
-      <h2>Adaptive IDS - Alerts</h2>
+      <h2>Adaptive IDS - Light Probe Mode Performance</h2>
       <button style="float:right;" type="submit" class="pure-button
-                 pure-button-primary" onclick="stopAlertsRefresh()">Stop refresh</button>
-      <div id="paper-container-ids-alerts" class="paper"/>
+                 pure-button-primary" onclick="stopPerfRefresh()">Stop refresh</button>
+      <div id="paper-container-ids-lp-perf" class="paper"/>
+      <!--<div id="paper-container-ids"/>-->
+    </div> <!--paper-container-ids-->
+      <h2>Adaptive IDS - Deep Probe Mode Performance</h2>
+      <div id="paper-container-ids-dp-perf" class="paper"/>
       <!--<div id="paper-container-ids"/>-->
     </div> <!--paper-container-ids-->
   </div><!-- main -->
@@ -93,6 +97,6 @@
       <script src="/web/js/joint.all.min.js"></script>
       <script src="/web/js/joint.shapes.erd.js"></script>
       <script src="/web/js/joint.layout.DirectedGraph.js"></script>
-      <script src="/web/js/idsalerts.js"></script>
+      <script src="/web/js/idsperf.js"></script>
   </body>
 </html>
