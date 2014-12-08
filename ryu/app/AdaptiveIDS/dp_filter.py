@@ -8,7 +8,6 @@ import simple_snort_rules
 class DPFilter:
     def __init__(self, owner, rules='./ryu/app/AdaptiveIDS/light_probe.rules'):
         self.dp_rules = simple_snort_rules.SnortParser(owner, rule_file=rules)
-        #print('dp Filter rules: ' + rules)
     
 
     def __name__(self):

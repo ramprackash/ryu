@@ -25,6 +25,9 @@ class PortScanDetector:
         self.scan_window = scan_window
         #print('PortScanDetector created with scan window: '+str(self.scan_window))
     
+    """ Returns TRUE if a portscan from this src_ip is detected. False
+    otherwise
+    """
     def port_scan_detected(self, proto, src_ip, dst_ip, dst_port):
         port_scan_detected = False
         dest_ports = []
@@ -61,6 +64,9 @@ class LPFilter:
         # datapath.owner = ids_main
         return self.owner.owner
     
+    """ Subject packet to the portscanner and also the light probe rules if 
+    port scanner did not detect anything malicious
+    """
     def inspect_packets(self, datapath, in_port, out_port, proto="any",
                         src_ip="any", src_port="any", dst_ip="any", 
                         dst_port="any", pps=-1, pkt_data=None):

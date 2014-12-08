@@ -56,7 +56,8 @@ class TrafficMonitor:
 
         for stat in sorted([fl for fl in body if (fl.priority >= 32760 and
                                                   fl.priority != 65535)],
-                           key=lambda fl: (fl.match['ipv4_src'])):
+                           key=lambda fl: (fl.priority), reverse=True):
+                           #key=lambda fl: (fl.match['ipv4_src'])):
             sport = dport = proto = "any"
             try:
                 if stat.match['ip_proto'] == 6:

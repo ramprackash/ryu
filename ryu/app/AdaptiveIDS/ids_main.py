@@ -55,25 +55,12 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         self.ip_to_port = {}
         self.mac_to_port = {}
         self.datapaths = {}
-	f = open('ryu/app/AdaptiveIDS/alert_output', 'w')
-	f.write('')
+        f = open('ryu/app/AdaptiveIDS/alert_output', 'w')
+        f.write('')
         self.fetch_ids_cfg_params()
         self.clean_log_files()
-        #self.set_paths = {}
-        #self.flows = flows.Flows(self)
-        #self.lp_rules = simple_snort_rules.SnortParser(self, 
-        #                                   rule_file="./light_probe.rules")
-        #self.dp_rules = simple_snort_rules.SnortParser(self, 
-        #                                   rule_file="./deep_probe.rules")
-        #if (self.lp_rules == "error") or (self.dp_rules == "error"):
-        #    sys.exit(-1)
-
         self.monitor_thread = hub.spawn(self._monitor)                
         
-        #self.fsm = ids_state_machine.IDSStateMachine(self)
-        #self.traffic_mon = traffic_monitor.TrafficMonitor(self.fsm,
-        #        self)
-    
     def fetch_ids_cfg_params(self):
         cfg_parser = ids_cfg_loader.IDSCfgLoader('./ryu/app/AdaptiveIDS/ids.cfg')
         if not cfg_parser.load_all_cfg_params():
@@ -129,6 +116,10 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                                 reinstate=False)
 
     
+    """ 
+    The function that handles the discovery of new datapath elements
+    This creates the IDSDatapath object for each datapath
+    """
     @set_ev_cls(ofp_event.EventOFPStateChange, [MAIN_DISPATCHER, 
                                                 DEAD_DISPATCHER])
     def _state_change_handler(self, ev):
@@ -144,6 +135,10 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                     self.logger.debug('unregister datapath: %016x', dp.id)
                     del self.datapaths[dp.id]
 
+    """
+    Kicks off a OpenFlow 1.3 FLOW_STATS_REQ for each datapath in the system
+    every 
+    """
     def _monitor(self):
         while True:
             tm_log = open("./ryu/app/AdaptiveIDS/tmlogs.txt", "w")
@@ -153,13 +148,15 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             hub.sleep(IDSCfgParams.FLOW_STATS_INTERVAL)
     
     def _request_stats(self, datapath):
-        #self.logger.debug('send stats request: %016x', datapath.id)
         ofproto = datapath.ofproto
         parser = datapath.ofproto_parser
 
         req = parser.OFPFlowStatsRequest(datapath)
         datapath.send_msg(req)
 
+    """ 
+    Handle flow stats response
+    """
     @set_ev_cls(ofp_event.EventOFPFlowStatsReply, MAIN_DISPATCHER)
     def _flow_stats_reply_handler(self, ev):
         dp = self.datapaths[ev.msg.datapath.id]
@@ -167,8 +164,10 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
 
     
 
-    # Learn a host's presence based on the received ARP packet and program flow
-    # accordingly using L3 fields rather than like the simple_switch.py
+    """
+    Learn a host's presence based on the received ARP packet and program flow
+    accordingly using L3 fields rather than like the simple_switch.py
+    """
     @set_ev_cls(ofp_event.EventOFPPacketIn, MAIN_DISPATCHER)
     def _packet_in_handler(self, ev):
         msg = ev.msg
@@ -182,24 +181,12 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
         flow_exists = 0
 
         pkt = packet.Packet(msg.data)
-        #TODO: Check if str(pkt) can be used for content based inspections viz.:
-        #where the rules contain options with (content:"0xba 0xad 0xca 0xfe";)
-        #print("Pkt IN : %s" % str(pkt))
 
         #Ignore LLDP as it is used by the topology discovery module
         eth = pkt.get_protocols(ethernet.ethernet)[0]
         if eth.ethertype == ether.ETH_TYPE_LLDP:
             return
 
-        #header_list = {}
-        #pkt_data = None
-        #for p in pkt.protocols:
-        #    if type(p) != str:
-        #        header_list[p.protocol_name] = p
-        #    else :
-        #        pkt_data = p
-        #        #print pkt_data
-    
         header_list = dict((p.protocol_name, p) 
                 for p in pkt.protocols if type(p) != str)
 
@@ -255,7 +242,8 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             # necessary action
             #print ("%d : %d : %s : %s : %s : %s : %s" % (in_port, out_port,
             #    proto, src_ip, sport, dst_ip, dport))
-            result = self.datapaths[datapath.id].fsm.inspect_packets(datapath, in_port, out_port,
+            result = self.datapaths[datapath.id].fsm.inspect_packets(datapath, 
+                    in_port, out_port,
                     proto=proto, src_ip=src_ip, src_port=sport, dst_ip=dst_ip,
                     dst_port=dport, pkt_data=pkt)
             sport = "any"
@@ -272,35 +260,21 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
     
                 if (out_port != ofproto.OFPP_FLOOD):
                     reinstate_flag = False
-                    #key = str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)
-                    #if key not in self.set_paths.keys():
-                    #    self.send_ip_flow(datapath, in_port, out_port,
-                    #        proto=proto, 
-                    #        src_ip=src_ip,
-                    #        src_port=sport,
-                    #        dst_ip=dst_ip, 
-                    #        dst_port=dport,
-                    #        drop=drop_flag)
-                    #    self.set_paths[str(dpid)+str(src_ip)+str(dst_ip)+str(out_port)] = 1
-                    if self.datapaths[datapath.id].flows.getflow(datapath, src_ip, dst_ip, proto, 
-                            sport, dport) == None:
-                        self.datapaths[datapath.id].send_ip_flow(ofproto.OFPFC_ADD, 
-                            in_port, out_port,
-                            proto=proto, 
-                            src_ip=src_ip,
-                            src_port=sport,
-                            dst_ip=dst_ip, 
-                            dst_port=dport,
-                            drop=drop_flag)
+                    if self.datapaths[datapath.id].flows.getflow(datapath, 
+                            src_ip, dst_ip, proto, sport, dport) == None:
+                        self.datapaths[datapath.id].send_ip_flow(
+                            ofproto.OFPFC_ADD, in_port, out_port,
+                            proto=proto, src_ip=src_ip, src_port=sport, 
+                            dst_ip=dst_ip, dst_port=dport, drop=drop_flag)
                         if result != None:
                             matches_rule = True
                             if "reinstate" in result:
                                 reinstate_flag = True
                         else:
                             matches_rule = False
-                        self.datapaths[datapath.id].flows.addflow(datapath, proto, src_ip, 
-                                "any", dst_ip, 
-                                "any", out_port=out_port,
+                        self.datapaths[datapath.id].flows.addflow(datapath, 
+                                proto, src_ip, "any", dst_ip, 
+                                "any", out_port=out_port, 
                                 matches_rule=matches_rule,
                                 reinstate=reinstate_flag)
                     else:
@@ -318,6 +292,24 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
                     datapath.send_msg(out)
     
                 
+    def clean_log_files(self):
+        ps_log = open('./ryu/app/AdaptiveIDS/portscan.report', 'w')
+        ps_log.close()
+        tm_log = open("./ryu/app/AdaptiveIDS/tmlogs.txt", "w")
+        tm_log.close()
+
+    """ Helper function for port scanner module. Quarantine the given host """
+    def rogue_detected(self, src):
+        for dpid, idsdp in self.datapaths.iteritems():
+            datapath = idsdp.datapath
+            ofproto  = datapath.ofproto
+            idsdp.drop_this_rogue_ip(src)
+            self.datapaths[dpid].flows.addflow(datapath, "any", src, 
+                                "any", "any", 
+                                "any", out_port="any",
+                                matches_rule=True,
+                                reinstate=False)
+
 #if __name__ == "__main__":
 #    ids_main = IDSMain()
 #    ids_main.start_processing()

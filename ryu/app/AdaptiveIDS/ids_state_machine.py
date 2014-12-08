@@ -36,6 +36,7 @@ class IDSStateMachine:
         self.owner = owner
         self.enforce_light_probing()
     
+    """ Move to DPM """
     def enforce_deep_probing(self):
         self.state = self.dp_filter
         #self.print_state()
@@ -46,6 +47,7 @@ class IDSStateMachine:
         else:
             self.ids_timer.update_start_time()
     
+    """ Move to LPM """
     def enforce_light_probing(self):
         self.state = self.lp_filter
         #self.print_state()
