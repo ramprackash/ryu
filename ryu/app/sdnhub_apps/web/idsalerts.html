@@ -7,7 +7,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Adaptive IDS</title>
+    <title>Adaptive IDS - Alerts</title>
 
     <!-- Bootstrap core CSS -->
     <link rel="stylesheet" href="/web/css/pure-min-0.5.0.css">
@@ -49,11 +49,11 @@
                   <i class="fa fa-sitemap"></i></a>
               </li>
               -->
-              <li class="menu-item-divided pure-menu-selected">
+              <li class=" ">
                   <a href="/web/adaptiveids.html">Adaptive IDS
                   <i></i></a>
               </li>
-              <li class=" ">
+              <li class="menu-item-divided pure-menu-selected">
                   <a href="/web/idsalerts.html">Alerts
                   <i></i></a>
               </li>
@@ -70,32 +70,12 @@
  </div><!-- menu-->
 
  <div id="main">
-      <h2>Adaptive IDS Logs</h2>
+      <h2>Adaptive IDS - Alerts</h2>
       <button style="float:right;" type="submit" class="pure-button
-                 pure-button-primary" onclick="stopIDSLogsRefresh()">Stop refresh</button>
-      <div id="paper-container-ids" class="paper"/>
+                 pure-button-primary" onclick="stopAlertsRefresh()">Stop refresh</button>
+      <div id="paper-container-ids-alerts" class="paper"/>
       <!--<div id="paper-container-ids"/>-->
-      <table class="pure-table pure-table-bordered">
-                 <thead>
-                     <tr>
-                         <th>Datapath</th>
-                         <th>In-port</th>
-                         <th>IPv4 SRC</th>
-                         <th>IPv4 DST</th>
-                         <th>Out-port</th>
-                         <th>Packets</th>
-                         <th>Bytes</th>
-                         <th>PPS</th>
-                     </tr>
-                 </thead>
-                 <tbody id="ids-logs-data">
-                 </tbody>
-             </table>
-      <br>
-      <font color="green">(L) - Datapaths in Light Probe Mode</font><br>
-      <font color="red">(D) - Datapaths in Deep Probe Mode</font>
     </div> <!--paper-container-ids-->
-
   </div><!-- main -->
   </div><!--layout-->
 
@@ -109,6 +89,6 @@
       <script src="/web/js/joint.all.min.js"></script>
       <script src="/web/js/joint.shapes.erd.js"></script>
       <script src="/web/js/joint.layout.DirectedGraph.js"></script>
-      <script src="/web/js/ids.js"></script>
+      <script src="/web/js/idsalerts.js"></script>
   </body>
 </html>

@@ -4,6 +4,7 @@
 
 import sys, traceback
 import re
+import datetime
 from pyparsing import *
 from traffic_monitor import bcolors
 
@@ -227,7 +228,10 @@ class SnortParser:
                 # Can hook into email option here too for alerts
 		f = open('ryu/app/AdaptiveIDS/alert_output', 'a')
 		f.write(result[1]+"\n")
-                print(bcolors.WARNING + "!! ALERT : %s !!" % result[1] + bcolors.ENDC)
+                print(bcolors.WARNING + '[ '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+' ] ' + "!! ALERT : %s !!" % result[1] + bcolors.ENDC)
+                ids_alerts_log = open('./ryu/app/AdaptiveIDS/ids_hits.alerts', 'a')
+                ids_alerts_log.write('<font color="brown">'+ '[ '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+' ] ' + 'ALERT: '+ str(result[1]) +'</font><br/>')
+                ids_alerts_log.close()
             if "drop" in result:
                 drop_flag = True
                 actions = ""

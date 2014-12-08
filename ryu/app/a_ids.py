@@ -96,6 +96,16 @@ class AdIDSController(ControllerBase):
             resp_body = resp_body + r_line
         return Response(content_type='text', body=resp_body)
 
+    def get_alerts(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/ids_hits.alerts","r")
+ 
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
+
 
 class RestIDSApi(app_manager.RyuApp):
     _CONTEXTS = {
@@ -117,6 +127,10 @@ class RestIDSApi(app_manager.RyuApp):
         uri = path + '/portscan'
         mapper.connect('ids', uri,
                        controller=AdIDSController, action='get_portscan',
+                       conditions=dict(method=['GET']))
+        uri = path + '/idsalerts'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_alerts',
                        conditions=dict(method=['GET']))
         uri = path + '/lprules'
         mapper.connect('ids', uri,

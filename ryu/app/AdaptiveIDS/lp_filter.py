@@ -82,6 +82,7 @@ class LPFilter:
                 port_scan_log.write('<font color="red">[ '+datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")+' ]' +" Port scan detected from  SRC IP: " + 
                         str(src_ip) + " DST IP: "+ str(dst_ip)+" DST PORT: " + 
                         str(dst_port)+"</font><br>")
+                port_scan_log.close()
                 return ["drop"]
 
         if SAMPLING_ENABLE:

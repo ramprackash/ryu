@@ -99,10 +99,17 @@ class IDSMain(simple_switch_13.SimpleSwitch13):
             time.sleep(10)
 
     def clean_log_files(self):
-        ps_log = open('./ryu/app/AdaptiveIDS/portscan.report', 'w')
-        ps_log.close()
-        tm_log = open("./ryu/app/AdaptiveIDS/tmlogs.txt", "w")
-        tm_log.close()
+        try:
+
+            ps_log = open('./ryu/app/AdaptiveIDS/portscan.report', 'w')
+            ps_log.close()
+            tm_log = open("./ryu/app/AdaptiveIDS/tmlogs.txt", "w")
+            tm_log.close()
+            alerts = open('./ryu/app/AdaptiveIDS/ids_hits.alerts', 'w')
+            #alerts.truncate()
+            alerts.close()
+        except:
+            print "Unexpected error:", sys.exc_info()[0]         
 
     def rogue_detected(self, src):
         for dpid, idsdp in self.datapaths.iteritems():
