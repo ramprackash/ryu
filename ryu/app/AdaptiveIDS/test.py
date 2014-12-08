@@ -19,6 +19,7 @@ class SingleSwitchTopo(Topo):
                 self.addLink(host, switch)
 
 def verifyAlerts(alerts):
+        f = open('alert','w')
         with open('alert_output') as fp:
            match={}
            for rule in alerts:
@@ -30,12 +31,15 @@ def verifyAlerts(alerts):
                        break
            for rule in alerts:
                if match[rule] == False:
-                     print "ERROR!!!! Alert Match not found for "+rule
+                     f.write("ERROR!!!! Alert Match not found for "+rule+ "\n")
                else:
-                    print "ALERT PASSED : " + rule   
+                    f.write("ALERT PASSED : "+rule+ "\n")  
+        f.close()
+
 
 def verifyFlows(flows):
 	#./flow_dump
+        f = open('flow','w')
         with open('flow_dump') as fp:
            match={}
            for rule in flows:
@@ -48,9 +52,10 @@ def verifyFlows(flows):
                        break
            for rule in flows:
                if match[rule] == False:
-                     print "ERROR!!!! Flow Match not found for "+rule
+                     f.write("ERROR!!!! Flow Match not found for "+rule+"\n")
                else:
-                    print "FLOW PASSED : " + rule    
+                    f.write( "FLOW PASSED : " + rule + "\n")
+        f.close()  
 
 def simpleTest():
         "Create and test a simple network"

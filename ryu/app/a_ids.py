@@ -99,6 +99,16 @@ class AdIDSController(ControllerBase):
     def get_alerts(self, req, **_kwargs):
         #print("AdIDSController - get_logs")
         resp_file = open("./ryu/app/AdaptiveIDS/ids_hits.alerts","r")
+
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
+
+    def get_alert(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/alert","r")
  
         r_lines = resp_file.readlines()	
         resp_body = ''
@@ -116,6 +126,75 @@ class AdIDSController(ControllerBase):
        #     resp_body = resp_body + r_line
         return Response(content_type='text', body='')
 
+    def get_flow(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/flow","r")
+ 
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
+
+    def get_lpLatency(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/lp_latency","r")
+ 
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
+
+    def get_dpLatency(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/dp_latency","r")
+ 
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
+
+    def get_h1_lpBandwidth(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/h1_lp_bandwidth","r")
+ 
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
+
+    def get_h2_lpBandwidth(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/h2_lp_bandwidth","r")
+ 
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
+
+    def get_h1_dpBandwidth(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/h1_dp_bandwidth","r")
+ 
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
+
+    def get_h2_dpBandwidth(self, req, **_kwargs):
+        #print("AdIDSController - get_logs")
+        resp_file = open("./ryu/app/AdaptiveIDS/h2_dp_bandwidth","r")
+ 
+        r_lines = resp_file.readlines()	
+        resp_body = ''
+        for r_line in r_lines:
+            resp_body = resp_body + r_line
+        return Response(content_type='text', body=resp_body)
 
 class RestIDSApi(app_manager.RyuApp):
     _CONTEXTS = {
@@ -157,4 +236,36 @@ class RestIDSApi(app_manager.RyuApp):
 
 
 
+        uri = path + '/alert'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_alert',
+                       conditions=dict(method=['GET']))
+        uri = path + '/flow'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_flow',
+                       conditions=dict(method=['GET']))
+        uri = path + '/lpLatency'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_lpLatency',
+                       conditions=dict(method=['GET']))
+        uri = path + '/dpLatency'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_dpLatency',
+                       conditions=dict(method=['GET']))
+        uri = path + '/h1LpBandwidth'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_h1_lpBandwidth',
+                       conditions=dict(method=['GET']))
+        uri = path + '/h2LpBandwidth'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_h2_lpBandwidth',
+                       conditions=dict(method=['GET']))
+        uri = path + '/h1DpBandwidth'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_h1_dpBandwidth',
+                       conditions=dict(method=['GET']))
+        uri = path + '/h2DpBandwidth'
+        mapper.connect('ids', uri,
+                       controller=AdIDSController, action='get_h2_dpBandwidth',
+                       conditions=dict(method=['GET']))
 

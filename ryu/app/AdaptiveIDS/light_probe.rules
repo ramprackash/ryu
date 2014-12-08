@@ -21,5 +21,4 @@
 #   |         |                "10.0.0.1", "$HOME_NET", "$EXTERNAL_NET", "any"
 #   |         |--------could be one of "tcp", "udp", "icmp", "any"
 #   |---------could be one of "alert", "drop"
-#
-alert any 10.0.0.1 any -> 10.0.0.3 any (msg:"This is h1->h3";)
+alert any 10.0.0.1 any -> 10.0.0.3 any (msg:"This is h1->h3";  pps:80;)
